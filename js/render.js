@@ -83,10 +83,13 @@ function addLabel(c, nx, ny, sign, offset, pct) {
   dom.labelLayer.appendChild(dot);
   dom.labelLayer.appendChild(txt);
 
+  dom.labelLayer.getBoundingClientRect();
   requestAnimationFrame(() => {
-    ln.classList.add('show');
-    dot.classList.add('show');
-    txt.classList.add('show');
+    requestAnimationFrame(() => {
+      ln.classList.add('show');
+      dot.classList.add('show');
+      txt.classList.add('show');
+    });
   });
 }
 
@@ -116,7 +119,11 @@ function showVerdict(diff) {
   dom.scoreLine.innerHTML = `
     <div class="verdict ${cls}" id="verdict">Diff: ${diff.toFixed(2)}%</div>
   `;
+  const v = document.getElementById('verdict');
+  v.getBoundingClientRect();
   requestAnimationFrame(() => {
-    document.getElementById('verdict').classList.add('show');
+    requestAnimationFrame(() => {
+      v.classList.add('show');
+    });
   });
 }
