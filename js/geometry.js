@@ -71,3 +71,33 @@ function pointsToPath(pts) {
   for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x.toFixed(2)} ${pts[i].y.toFixed(2)}`;
   return d + ' Z';
 }
+
+function shapeToPath(shape) {
+  let d = pointsToPath(shape.outer);
+  for (const h of shape.holes) if (h.length) d += ' ' + pointsToPath(h);
+  return d;
+}
+
+function shapeArea(shape) {
+  let a = polygonArea(shape.outer);
+  for (const h of shape.holes) a -= polygonArea(h);
+  return a;
+}
+
+function distPointToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 < 1e-6) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+function distPointToPolygon(p, pts) {
+  let m = Infinity;
+  for (let i = 0, n = pts.length; i < n; i++) {
+    const d = distPointToSegment(p, pts[i], pts[(i + 1) % n]);
+    if (d < m) m = d;
+  }
+  return m;
+}

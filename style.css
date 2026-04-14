@@ -69,6 +69,7 @@ body {
 
 .shape {
   fill: var(--accent-soft); fill-opacity: 0.78;
+  fill-rule: evenodd;
   stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round;
   filter: drop-shadow(0 0 12px rgba(192,132,252,0.28));
 }

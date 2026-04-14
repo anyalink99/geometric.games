@@ -15,10 +15,6 @@ function strokeCrossesShape(a, b, polygon) {
   return true;
 }
 
-/**
- * Wire up pointer-driven cutting on the hit pad.
- * `ctx` provides: getPolygon(), isLocked(), onCut(p0, p1).
- */
 function initInput(ctx) {
   const { hitPad, cutPreview } = dom;
   let activePointerId = null;
@@ -29,7 +25,7 @@ function initInput(ctx) {
     cutPreview.setAttribute('y1', p0.y);
     cutPreview.setAttribute('x2', p1.x);
     cutPreview.setAttribute('y2', p1.y);
-    cutPreview.classList.toggle('valid', strokeCrossesShape(p0, p1, ctx.getPolygon()));
+    cutPreview.classList.toggle('valid', strokeCrossesShape(p0, p1, ctx.getOuter()));
   }
 
   function resetPreview() {
@@ -70,7 +66,7 @@ function initInput(ctx) {
     resetPreview();
     if (cancelled || !moved) return;
     p1 = svgPoint(e);
-    if (!strokeCrossesShape(p0, p1, ctx.getPolygon())) {
+    if (!strokeCrossesShape(p0, p1, ctx.getOuter())) {
       flashHint('Stroke must fully cross the shape');
       return;
     }

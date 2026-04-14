@@ -6,7 +6,6 @@ const MAX_R = 168;
 const BASE_R = 118;
 const TAU = Math.PI * 2;
 
-// Every shape is normalized to this final area for fair, comparable cuts.
 const TARGET_AREA = 30000;
 
 const MOVE_THRESHOLD = 6;

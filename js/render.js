@@ -15,21 +15,21 @@ function clearLayers() {
   dom.labelLayer.innerHTML = '';
 }
 
-function renderShape(polygon) {
+function renderShape(shape) {
   clearLayers();
   const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute('class', 'shape');
-  path.setAttribute('d', pointsToPath(polygon));
+  path.setAttribute('d', shapeToPath(shape));
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('class', 'shape-group');
   g.appendChild(path);
   dom.shapeLayer.appendChild(g);
 }
 
-function makePiece(pts) {
+function makePiece(shape) {
   const p = document.createElementNS(SVG_NS, 'path');
   p.setAttribute('class', 'shape piece');
-  p.setAttribute('d', pointsToPath(pts));
+  p.setAttribute('d', shapeToPath(shape));
   return p;
 }
 
