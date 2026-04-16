@@ -41,11 +41,11 @@ function pushRoute(mode, hash) {
   const url = buildRouteUrl(mode, hash);
   const current = window.location.pathname + window.location.search;
   if (url !== current) {
-    history.pushState({ mode, hash }, '', url);
+    try { history.pushState({ mode, hash }, '', url); } catch (e) {}
   }
 }
 
 function replaceRoute(mode, hash) {
   const url = buildRouteUrl(mode, hash);
-  history.replaceState({ mode, hash }, '', url);
+  try { history.replaceState({ mode, hash }, '', url); } catch (e) {}
 }

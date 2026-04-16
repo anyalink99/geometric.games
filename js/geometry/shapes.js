@@ -247,7 +247,7 @@ function cavityFitsInside(pts, outer, margin) {
 }
 
 function makeCircleCavity(cx, cy, r) {
-  const N = 24;
+  const N = Math.max(32, Math.min(72, Math.round(r * 1.4)));
   const angOff = rand(0, TAU);
   const pts = [];
   for (let i = 0; i < N; i++) {
@@ -266,7 +266,7 @@ function makeLensCavity(cx, cy, len, ang, bulge) {
   const c1 = { x: mx + px * bulge, y: my + py * bulge };
   const c2 = { x: mx - px * bulge, y: my - py * bulge };
   const pts = [];
-  const N = 14;
+  const N = 22;
   for (let i = 0; i < N; i++) {
     const t = i / N, u = 1 - t;
     pts.push({
@@ -370,36 +370,110 @@ function tryMakeCavityAvoiding(outer, existingHoles) {
   return null;
 }
 
-function generateMassShape() {
-  const r = Math.random();
-  let desiredHoles;
-  if (r < 0.03)       desiredHoles = 3;
-  else if (r < 0.13)  desiredHoles = 2;
-  else if (r < 0.43)  desiredHoles = 1;
-  else                desiredHoles = 0;
+function sampleMassHoleCount() {
+  let n = 1;
+  while (Math.random() < 0.5 && n < 6) n++;
+  return n;
+}
 
-  for (let attempt = 0; attempt < 35; attempt++) {
+function placeMassHole(outer, existing, targetArea, minX, maxX, minY, maxY) {
+  for (let tries = 0; tries < 120; tries++) {
+    const cx = rand(minX, maxX);
+    const cy = rand(minY, maxY);
+    const slack = rand(1.15, 1.9);
+    const unclippedArea = targetArea * slack;
+    const r = Math.sqrt(unclippedArea / Math.PI);
+    if (r < 8 || r > 220) continue;
+
+    let pts;
+    if (Math.random() < 0.7) {
+      pts = makeCircleCavity(cx, cy, r);
+    } else {
+      const len = r * 1.8;
+      const ang = rand(0, TAU);
+      const bulge = len * rand(0.22, 0.4);
+      pts = makeLensCavity(cx, cy, len, ang, bulge);
+    }
+
+    let hasOutside = false, hasInside = false;
+    for (const p of pts) {
+      if (pointInPolygon(p, outer)) hasInside = true;
+      else hasOutside = true;
+      if (hasOutside && hasInside) break;
+    }
+    if (!hasOutside || !hasInside) continue;
+
+    const clipped = intersectPolygonWithConvex(outer, pts);
+    if (!clipped || clipped.length < 3) continue;
+    const area = polygonArea(clipped);
+    if (area < 80) continue;
+
+    let overlaps = false;
+    for (const h of existing) {
+      if (polygonsOverlap(clipped, h)) { overlaps = true; break; }
+    }
+    if (overlaps) continue;
+
+    return clipped;
+  }
+  return null;
+}
+
+function generateMassShape() {
+  const targetHoleCount = sampleMassHoleCount();
+  const targetRatio = 0.30 + Math.random() * 0.60;
+
+  for (let outerAttempt = 0; outerAttempt < 25; outerAttempt++) {
     const built = generateOuter();
     let shape = { outer: built.pts, holes: [] };
     shape = centerShapeObject(shape);
     const normalized = normalizeShapeArea(shape);
     if (!normalized) continue;
 
-    if (desiredHoles === 0) return normalized;
+    const outer = normalized.outer;
+    const outerArea = polygonArea(outer);
+    const targetHoleArea = outerArea * targetRatio;
 
-    const holes = [];
-    for (let hi = 0; hi < desiredHoles; hi++) {
-      const cavity = tryMakeCavityAvoiding(normalized.outer, holes);
-      if (!cavity) break;
-      holes.push(cavity);
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const p of outer) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
     }
+    const padX = (maxX - minX) * 0.3;
+    const padY = (maxY - minY) * 0.3;
 
-    if (holes.length === 0) continue;
+    for (let layout = 0; layout < 20; layout++) {
+      const clippedHoles = [];
+      let totalArea = 0;
 
-    const withHoles = { outer: normalized.outer, holes };
-    const renormalized = normalizeShapeArea(withHoles);
-    if (!renormalized) continue;
-    return renormalized;
+      for (let h = 0; h < targetHoleCount; h++) {
+        const remaining = Math.max(0, targetHoleArea - totalArea);
+        const slots = targetHoleCount - h;
+        const perHoleTarget = Math.max(300, remaining / slots);
+        const placed = placeMassHole(
+          outer, clippedHoles, perHoleTarget,
+          minX - padX, maxX + padX, minY - padY, maxY + padY
+        );
+        if (!placed) break;
+        clippedHoles.push(placed);
+        totalArea += polygonArea(placed);
+      }
+
+      if (clippedHoles.length !== targetHoleCount) continue;
+      const tol = outerArea * 0.10;
+      const lo = Math.max(outerArea * 0.28, targetHoleArea - tol);
+      const hi = Math.min(outerArea * 0.92, targetHoleArea + tol);
+      if (totalArea >= lo && totalArea <= hi) {
+        let currentOuter = outer;
+        const interiorHoles = [];
+        for (const hole of clippedHoles) {
+          const { merged, leftover } = mergeBoundaryHoleIntoOuter(currentOuter, hole, 1.2);
+          if (merged) currentOuter = merged;
+          if (leftover) interiorHoles.push(leftover);
+        }
+        return { outer: currentOuter, holes: interiorHoles };
+      }
+    }
   }
   return generateShape();
 }

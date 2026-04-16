@@ -3,6 +3,8 @@ const dom = {
   hitPad: document.getElementById('hit-pad'),
   shapeLayer: document.getElementById('shape-layer'),
   cutLayer: document.getElementById('cut-layer'),
+  cutLines: document.getElementById('cut-lines-layer'),
+  cutPoints: document.getElementById('cut-points-layer'),
   labelLayer: document.getElementById('label-layer'),
   cutPreview: document.getElementById('cut-preview'),
   scoreLine: document.getElementById('score-line'),
@@ -29,6 +31,8 @@ function svgPoint(evt) {
 function clearLayers() {
   dom.shapeLayer.innerHTML = '';
   dom.cutLayer.innerHTML = '';
+  dom.cutLines.innerHTML = '';
+  dom.cutPoints.innerHTML = '';
   dom.labelLayer.innerHTML = '';
   dom.squareLines.innerHTML = '';
   dom.squarePoints.innerHTML = '';
@@ -39,13 +43,29 @@ function clearLayers() {
   dom.massIdeal.innerHTML = '';
 }
 
+function makeShapeGroup(shape, groupClass) {
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('class', groupClass);
+
+  const fill = document.createElementNS(SVG_NS, 'path');
+  fill.setAttribute('class', 'shape-fill');
+  fill.setAttribute('d', shapeToPath(shape));
+  g.appendChild(fill);
+
+  const outline = document.createElementNS(SVG_NS, 'path');
+  outline.setAttribute('class', 'shape-outline');
+  outline.setAttribute('d', pointsToPath(shape.outer));
+  if (shape.holes && shape.holes.length) {
+    let holesD = '';
+    for (const h of shape.holes) if (h.length) holesD += ' ' + pointsToPath(h);
+    outline.setAttribute('d', pointsToPath(shape.outer) + holesD);
+  }
+  g.appendChild(outline);
+
+  return g;
+}
+
 function renderShape(shape) {
   clearLayers();
-  const path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('class', 'shape');
-  path.setAttribute('d', shapeToPath(shape));
-  const g = document.createElementNS(SVG_NS, 'g');
-  g.setAttribute('class', 'shape-group');
-  g.appendChild(path);
-  dom.shapeLayer.appendChild(g);
+  dom.shapeLayer.appendChild(makeShapeGroup(shape, 'shape-group'));
 }

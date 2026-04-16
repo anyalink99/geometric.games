@@ -1,5 +1,6 @@
 const state = {
   mode: 'cut',
+  cutVariation: 'half',
   shape: { outer: [], holes: [] },
   locked: false,
   hash: null,
@@ -7,9 +8,15 @@ const state = {
 
 function updateActionButton() {
   const btn = dom.newBtn;
-  const needsConfirm =
-    (state.mode === 'square' && squareState.points.length === 4 && !squareState.confirmed) ||
-    (state.mode === 'mass' && massState.guess && !massState.confirmed);
+  let needsConfirm = false;
+  if (state.mode === 'square' && squareState.points.length === 4 && !squareState.confirmed) needsConfirm = true;
+  else if (state.mode === 'mass' && massState.guess && !massState.confirmed) needsConfirm = true;
+  else if (state.mode === 'cut' && !cutState.confirmed) {
+    const v = cutVariation();
+    const placed = cutState.cuts.length;
+    if (v === 'angle') needsConfirm = placed >= 1;
+    else needsConfirm = placed >= cutRequiredCount();
+  }
   if (needsConfirm) {
     btn.textContent = 'Confirm';
     btn.dataset.action = 'confirm';
@@ -50,7 +57,7 @@ function newShape(hash, nav = 'push') {
     updateMassHint();
     dom.hitPad.style.cursor = 'crosshair';
   } else {
-    setCutHint();
+    cutOnNewShape();
     dom.hitPad.style.cursor = '';
   }
   dom.newBtn.classList.remove('pulse');
@@ -65,4 +72,19 @@ function setMode(m) {
   document.body.dataset.mode = m;
   try { localStorage.setItem(MODE_KEY, m); } catch (e) {}
   newShape();
+}
+
+function setCutVariation(v) {
+  if (!CUT_VARIATIONS.includes(v)) return;
+  state.cutVariation = v;
+  document.body.dataset.cutVariation = v;
+  try { localStorage.setItem(CUT_VARIATION_KEY, v); } catch (e) {}
+  if (state.mode === 'cut') {
+    state.locked = false;
+    cutReset();
+    renderShape(state.shape);
+    cutOnNewShape();
+    dom.newBtn.classList.remove('pulse');
+    updateActionButton();
+  }
 }

@@ -50,6 +50,8 @@
       <circle class="ring" cx="200" cy="200" r="180" pointer-events="none"/>
       <g id="shape-layer"></g>
       <g id="cut-layer"></g>
+      <g id="cut-lines-layer"></g>
+      <g id="cut-points-layer"></g>
       <g id="square-ideal-layer"></g>
       <g id="square-lines-layer"></g>
       <g id="square-points-layer"></g>
@@ -75,12 +77,47 @@
     <div class="modal">
       <h2>HOW TO PLAY</h2>
       <div class="help-cut">
-        <p>Cut the shape with one straight line — as close to <b>50/50</b> by area as you can.</p>
-        <ul>
-          <li>Press &amp; drag — your stroke must fully cross the shape</li>
-          <li>Release to score the cut</li>
-          <li>One shape = one attempt</li>
-        </ul>
+        <div class="help-cut-half">
+          <p>Slice the shape into <b>two equal halves</b> with one straight line.</p>
+          <ul>
+            <li>Drag across — your stroke must fully cross the shape</li>
+            <li>Release to place the line; drag the endpoints to fine-tune</li>
+            <li>Press <b>Confirm</b> to score the cut</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> by the Intermediate Value Theorem, every region has a 50/50 bisector in <i>every</i> direction — perfection is always reachable.</p>
+        </div>
+        <div class="help-cut-ratio">
+          <p>Cut in a <b>random target ratio</b> (5/95 … 50/50) shown up top each round.</p>
+          <ul>
+            <li>Same controls as Half — one line, fully across</li>
+            <li>Aim to match the small-piece percentage</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> for any r ∈ (0, 1) and any direction there's a line producing that exact ratio — IVT applied to the moving half-plane.</p>
+        </div>
+        <div class="help-cut-quad">
+          <p>Two cuts that cross <b>inside</b> the shape — four equal pieces.</p>
+          <ul>
+            <li>Draw two lines, each fully crossing the shape</li>
+            <li>Drag any endpoint to adjust, then <b>Confirm</b></li>
+          </ul>
+          <p class="math-note"><b>Math:</b> Courant–Robbins theorem — any planar region can be split into 4 equal pieces by <i>two perpendicular</i> lines. Proof rotates two area-bisectors by 90° and uses IVT.</p>
+        </div>
+        <div class="help-cut-tri">
+          <p>Two cuts, but the second must stay in <b>one half</b> — three equal pieces.</p>
+          <ul>
+            <li>First line splits the shape; second splits only one of the halves</li>
+            <li>If the second line crosses the first inside the shape you get 4 pieces — invalid</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> apply IVT twice — first find a 1/3–2/3 bisector, then halve the larger piece. Always achievable.</p>
+        </div>
+        <div class="help-cut-angle">
+          <p>The cut's <b>angle is fixed</b>. Slide the line to find the 50/50 spot.</p>
+          <ul>
+            <li>Drag anywhere — the line translates perpendicular to its direction</li>
+            <li>Endpoints snap to the outline automatically</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> for any direction there is <i>exactly one</i> line of that direction bisecting the area — uniqueness and existence both from IVT.</p>
+        </div>
       </div>
       <div class="help-square">
         <p>Place <b>four points</b> on the outline to form a square — the closer to a perfect square, the better.</p>
@@ -89,6 +126,7 @@
           <li>Tap / click to drop — drag points any time to adjust</li>
           <li>After four points, press <b>Confirm</b> to score</li>
         </ul>
+        <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons and smooth curves; for arbitrary Jordan curves it's still <i>open</i> after 110+ years.</p>
       </div>
       <div class="help-mass">
         <p>Find the <b>center of mass</b> of the shape — tap anywhere to place your guess.</p>
@@ -97,6 +135,7 @@
           <li>Tap anywhere on the board to drop your guess</li>
           <li>Drag the point to fine-tune, then press <b>Confirm</b></li>
         </ul>
+        <p class="math-note"><b>Math:</b> the centroid doesn't have to lie <i>inside</i> the shape — for an annulus it sits at the empty center. Non-convex outlines and holes are where intuition breaks.</p>
       </div>
       <div class="close-row"><button class="btn" id="close-help">Got it</button></div>
     </div>
@@ -137,18 +176,51 @@
       <div class="mode-picker">
         <button class="mode-card" data-mode="cut">
           <div class="mode-title">Cut</div>
-          <div class="mode-desc">Slice the shape in half — one line, 50/50 by area.</div>
+          <div class="mode-desc">Slice the shape.</div>
         </button>
         <button class="mode-card" data-mode="square">
           <div class="mode-title">Square</div>
-          <div class="mode-desc">Place 4 points on the outline — make the cleanest square you can.</div>
+          <div class="mode-desc">Make the square.</div>
         </button>
         <button class="mode-card" data-mode="mass">
           <div class="mode-title">Center of Mass</div>
-          <div class="mode-desc">Tap where you think the center of mass is — shapes with holes will fool you.</div>
+          <div class="mode-desc">Find the center of mass.</div>
         </button>
       </div>
-      <div class="close-row"><button class="btn" id="close-gamemode">Close</button></div>
+      <div class="close-row">
+        <button class="btn secondary" id="variations-btn">Variations</button>
+        <button class="btn" id="close-gamemode">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-back" id="variations-modal">
+    <div class="modal">
+      <h2>CUT VARIATIONS</h2>
+      <p>Same cut mechanics, new goals.</p>
+      <div class="mode-picker">
+        <button class="var-card" data-var="half">
+          <div class="mode-title">Half</div>
+          <div class="mode-desc">Classic 50/50 split by area — one straight line.</div>
+        </button>
+        <button class="var-card" data-var="ratio">
+          <div class="mode-title">Target Ratio</div>
+          <div class="mode-desc">Cut in a random ratio between 5/95 and 50/50 — the target changes each shape.</div>
+        </button>
+        <button class="var-card" data-var="quad">
+          <div class="mode-title">Quad Cut</div>
+          <div class="mode-desc">Two cuts, four equal pieces. The lines must intersect inside the shape.</div>
+        </button>
+        <button class="var-card" data-var="tri">
+          <div class="mode-title">Tri Cut</div>
+          <div class="mode-desc">Two cuts, three equal pieces. The second cut must leave one piece whole.</div>
+        </button>
+        <button class="var-card" data-var="angle">
+          <div class="mode-title">Constrained Angle</div>
+          <div class="mode-desc">Line is pre-placed at a fixed angle. Drag it to find the 50/50 sweet spot.</div>
+        </button>
+      </div>
+      <div class="close-row"><button class="btn" id="close-variations">Close</button></div>
     </div>
   </div>
 </div>

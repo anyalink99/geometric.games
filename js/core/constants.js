@@ -14,3 +14,6 @@ const SQUARE_STATS_KEY = 'cutle.stats.square.v1';
 const MODE_KEY = 'cutle.mode.v1';
 const POINT_GRAB_R = 11;
 const MASS_STATS_KEY = 'cutle.stats.mass.v1';
+const CUT_VARIATION_KEY = 'cutle.cut.variation.v1';
+const CUT_VARIATIONS = ['half', 'ratio', 'quad', 'tri', 'angle'];
+const CUT_HANDLE_PAD = 22;

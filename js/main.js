@@ -18,6 +18,7 @@ document.getElementById('new-btn').addEventListener('click', () => {
   if (action === 'confirm') {
     if (state.mode === 'square') confirmSquare();
     else if (state.mode === 'mass') confirmMass();
+    else if (state.mode === 'cut') finalizeCut();
   } else {
     newShape();
   }
@@ -27,6 +28,29 @@ document.getElementById('help-btn').addEventListener('click', () => openModal('h
 document.getElementById('close-help').addEventListener('click', () => closeModal('help-modal'));
 document.getElementById('close-gamemode').addEventListener('click', () => closeModal('gamemode-modal'));
 document.getElementById('close-stats').addEventListener('click', () => closeModal('stats-modal'));
+document.getElementById('close-variations').addEventListener('click', () => closeModal('variations-modal'));
+
+const variationsBtn = document.getElementById('variations-btn');
+function refreshVariationsBtn() {
+  variationsBtn.style.display = state.mode === 'cut' ? '' : 'none';
+}
+variationsBtn.addEventListener('click', () => {
+  refreshVarCards();
+  closeModal('gamemode-modal');
+  openModal('variations-modal');
+});
+document.querySelectorAll('.var-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const v = card.dataset.var;
+    closeModal('variations-modal');
+    setCutVariation(v);
+  });
+});
+function refreshVarCards() {
+  document.querySelectorAll('.var-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.var === state.cutVariation);
+  });
+}
 const statsCutSection = document.getElementById('stats-cut-section');
 const statsSquareSection = document.getElementById('stats-square-section');
 const statsMassSection = document.getElementById('stats-mass-section');
@@ -59,6 +83,7 @@ function refreshModeCards() {
   document.querySelectorAll('.mode-card').forEach(c => {
     c.classList.toggle('active', c.dataset.mode === state.mode);
   });
+  refreshVariationsBtn();
 }
 document.getElementById('gamemode-btn').addEventListener('click', refreshModeCards);
 
@@ -82,6 +107,15 @@ if (!initialMode) {
 state.mode = initialMode;
 try { localStorage.setItem(MODE_KEY, state.mode); } catch (e) {}
 document.body.dataset.mode = state.mode;
+
+let initialVar = 'half';
+try {
+  const v = localStorage.getItem(CUT_VARIATION_KEY);
+  if (v && CUT_VARIATIONS.includes(v)) initialVar = v;
+} catch (e) {}
+state.cutVariation = initialVar;
+document.body.dataset.cutVariation = initialVar;
+
 refreshModeCards();
 newShape(initialRoute.hash || undefined, 'replace');
 

@@ -118,3 +118,193 @@ function distPointToPolygon(p, pts) {
   }
   return m;
 }
+
+function intersectPolygonWithConvex(subject, convex) {
+  if (!subject || subject.length < 3 || !convex || convex.length < 3) return [];
+  let cx = 0, cy = 0;
+  for (const p of convex) { cx += p.x; cy += p.y; }
+  cx /= convex.length; cy /= convex.length;
+
+  let result = subject.slice();
+  for (let i = 0, n = convex.length; i < n; i++) {
+    const a = convex[i], b = convex[(i + 1) % n];
+    let nx = -(b.y - a.y);
+    let ny = b.x - a.x;
+    let c = -(nx * a.x + ny * a.y);
+    if (nx * cx + ny * cy + c < 0) { nx = -nx; ny = -ny; c = -c; }
+    result = clipHalfPlane(result, nx, ny, c);
+    if (!result.length) return [];
+  }
+  return result;
+}
+
+function locateOnPolygonBoundary(p, polygon, eps = 0.8) {
+  let best = null, bestDist = eps;
+  for (let i = 0, n = polygon.length; i < n; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % n];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const l2 = dx * dx + dy * dy;
+    if (l2 < 1e-9) continue;
+    let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const px = a.x + t * dx, py = a.y + t * dy;
+    const d = Math.hypot(p.x - px, p.y - py);
+    if (d < bestDist) {
+      best = { edge: i, t, point: { x: px, y: py } };
+      bestDist = d;
+    }
+  }
+  return best;
+}
+
+function walkPolygonBetween(polygon, locStart, locEnd, dir) {
+  const N = polygon.length;
+  const result = [];
+  if (dir === 1) {
+    if (locStart.edge === locEnd.edge && locEnd.t >= locStart.t) return [];
+    let idx = (locStart.edge + 1) % N;
+    const stopIdx = (locEnd.edge + 1) % N;
+    for (let s = 0; s < N + 1; s++) {
+      result.push(polygon[idx]);
+      idx = (idx + 1) % N;
+      if (idx === stopIdx) break;
+    }
+  } else {
+    if (locStart.edge === locEnd.edge && locEnd.t <= locStart.t) return [];
+    let idx = locStart.edge;
+    const stopIdx = locEnd.edge;
+    for (let s = 0; s < N + 1; s++) {
+      result.push(polygon[idx]);
+      idx = (idx - 1 + N) % N;
+      if (idx === stopIdx) break;
+    }
+  }
+  return result;
+}
+
+function _dedupRing(pts) {
+  const out = [];
+  for (const p of pts) {
+    if (out.length) {
+      const q = out[out.length - 1];
+      if (Math.abs(p.x - q.x) < 0.01 && Math.abs(p.y - q.y) < 0.01) continue;
+    }
+    out.push(p);
+  }
+  while (out.length >= 2) {
+    const a = out[0], b = out[out.length - 1];
+    if (Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01) out.pop();
+    else break;
+  }
+  return out;
+}
+
+function _spliceInteriorCurve(currentOuter, interiorCurve, eps) {
+  const locStart = locateOnPolygonBoundary(interiorCurve[0], currentOuter, eps);
+  const locEnd = locateOnPolygonBoundary(interiorCurve[interiorCurve.length - 1], currentOuter, eps);
+  if (!locStart || !locEnd) return null;
+
+  const lens = [];
+  let totalPerim = 0;
+  for (let i = 0, n = currentOuter.length; i < n; i++) {
+    const a = currentOuter[i], b = currentOuter[(i + 1) % n];
+    const l = Math.hypot(b.x - a.x, b.y - a.y);
+    lens.push(l);
+    totalPerim += l;
+  }
+  if (totalPerim < 1e-6) return null;
+  const perimPos = (loc) => {
+    let s = 0;
+    for (let i = 0; i < loc.edge; i++) s += lens[i];
+    return s + loc.t * lens[loc.edge];
+  };
+  const pS = perimPos(locStart), pE = perimPos(locEnd);
+  const forwardDist = ((pE - pS) % totalPerim + totalPerim) % totalPerim;
+  const contactDir = forwardDist < totalPerim / 2 ? 1 : -1;
+  const walkDir = -contactDir;
+  const outerPath = walkPolygonBetween(currentOuter, locStart, locEnd, walkDir);
+
+  const merged = [];
+  merged.push(locStart.point);
+  for (const p of outerPath) merged.push(p);
+  merged.push(locEnd.point);
+  for (let i = interiorCurve.length - 2; i >= 1; i--) merged.push(interiorCurve[i]);
+
+  const dedup = _dedupRing(merged);
+  if (dedup.length < 3) return null;
+  return dedup;
+}
+
+function mergeBoundaryHoleIntoOuter(outer, hole, eps = 1.5) {
+  const H = hole.length;
+  if (H < 3) return { merged: null, leftover: hole };
+
+  const locs = hole.map(p => locateOnPolygonBoundary(p, outer, eps));
+  const onBoundary = locs.map(l => l !== null);
+
+  const anyOn = onBoundary.some(b => b);
+  const allOn = onBoundary.every(b => b);
+  if (!anyOn) return { merged: null, leftover: hole };
+  if (allOn) return { merged: outer, leftover: null };
+
+  const runs = [];
+  let i = 0;
+  while (i < H && !onBoundary[i]) i++;
+  if (i === H) return { merged: null, leftover: hole };
+  const start = i;
+  let pos = start;
+  do {
+    if (onBoundary[pos] && !onBoundary[(pos + 1) % H]) {
+      const runStart = (pos + 1) % H;
+      let runEnd = runStart;
+      while (!onBoundary[(runEnd + 1) % H]) {
+        runEnd = (runEnd + 1) % H;
+        if (runEnd === runStart) break;
+      }
+      runs.push({ runStart, runEnd });
+    }
+    pos = (pos + 1) % H;
+  } while (pos !== start);
+
+  if (runs.length === 0) return { merged: null, leftover: hole };
+
+  let tempOuter = outer.slice();
+  let allOk = true;
+  for (const { runStart, runEnd } of runs) {
+    const boundaryBefore = (runStart - 1 + H) % H;
+    const boundaryAfter = (runEnd + 1) % H;
+    const interiorCurve = [hole[boundaryBefore]];
+    let k = runStart;
+    while (true) {
+      interiorCurve.push(hole[k]);
+      if (k === runEnd) break;
+      k = (k + 1) % H;
+    }
+    interiorCurve.push(hole[boundaryAfter]);
+
+    const spliced = _spliceInteriorCurve(tempOuter, interiorCurve, eps * 2);
+    if (!spliced) { allOk = false; break; }
+    tempOuter = spliced;
+  }
+
+  if (!allOk) return { merged: null, leftover: hole };
+  return { merged: tempOuter, leftover: null };
+}
+
+function polygonsOverlap(a, b) {
+  if (!a.length || !b.length) return false;
+  let aMinX = Infinity, aMaxX = -Infinity, aMinY = Infinity, aMaxY = -Infinity;
+  for (const p of a) {
+    if (p.x < aMinX) aMinX = p.x; if (p.x > aMaxX) aMaxX = p.x;
+    if (p.y < aMinY) aMinY = p.y; if (p.y > aMaxY) aMaxY = p.y;
+  }
+  let bMinX = Infinity, bMaxX = -Infinity, bMinY = Infinity, bMaxY = -Infinity;
+  for (const p of b) {
+    if (p.x < bMinX) bMinX = p.x; if (p.x > bMaxX) bMaxX = p.x;
+    if (p.y < bMinY) bMinY = p.y; if (p.y > bMaxY) bMaxY = p.y;
+  }
+  if (aMaxX < bMinX || bMaxX < aMinX || aMaxY < bMinY || bMaxY < aMinY) return false;
+  for (const p of a) if (pointInPolygon(p, b)) return true;
+  for (const p of b) if (pointInPolygon(p, a)) return true;
+  return false;
+}
