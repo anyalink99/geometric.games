@@ -28,8 +28,8 @@ function projectToOutline(p, outer) {
   return best;
 }
 
-function pickExistingPoint(p) {
-  let idx = -1, bestD = POINT_GRAB_R;
+function pickExistingPoint(p, grabR) {
+  let idx = -1, bestD = grabR ?? POINT_GRAB_R;
   for (let i = 0; i < squareState.points.length; i++) {
     const d = Math.hypot(p.x - squareState.points[i].x, p.y - squareState.points[i].y);
     if (d < bestD) { bestD = d; idx = i; }
@@ -384,6 +384,7 @@ function evaluateSquare(pts) {
     angles.push(Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI);
   }
   const angleErr = angles.reduce((s, a) => s + Math.abs(90 - a), 0) / 4;
+  const worstAngle = angles.reduce((worst, a) => Math.abs(90 - a) > Math.abs(90 - worst) ? a : worst, angles[0]);
   let sumSq = 0;
   for (let i = 0; i < 4; i++) {
     const dx = o[i].x - ideal.corners[i].x;
@@ -395,7 +396,7 @@ function evaluateSquare(pts) {
   const score = Math.max(0, Math.min(100, (1 - rel * 2.2) * 100));
   const maxS = Math.max(...sides), minS = Math.min(...sides);
   const sideRatio = maxS > 0 ? minS / maxS : 0;
-  return { ideal, sides, meanSide, angles, angleErr, rms, rel, score, sideRatio };
+  return { ideal, sides, meanSide, angles, angleErr, worstAngle, rms, rel, score, sideRatio };
 }
 
 function drawIdealSquare(corners) {
@@ -430,20 +431,24 @@ function showSquareVerdict(res) {
   else if (res.score >= 90) cls = 'great';
   else if (res.score >= 75) cls = 'good';
   else                      cls = 'fair';
-  const avgAng = res.angles.reduce((s, a) => s + a, 0) / 4;
   dom.scoreLine.innerHTML = `
     <div class="verdict ${cls}" id="verdict">Square: ${res.score.toFixed(1)}%</div>
     <div class="score-stats" id="sstats">
-      sides ${(res.sideRatio * 100).toFixed(1)}% even · avg angle ${avgAng.toFixed(1)}°
+      sides ${(res.sideRatio * 100).toFixed(1)}% even
+    </div>
+    <div class="score-stats" id="sstats2">
+      worst angle ${res.worstAngle.toFixed(1)}°
     </div>
   `;
   const v = document.getElementById('verdict');
   const s = document.getElementById('sstats');
+  const s2 = document.getElementById('sstats2');
   v.getBoundingClientRect();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       v.classList.add('show');
       s.classList.add('show');
+      s2.classList.add('show');
     });
   });
 }
@@ -459,6 +464,7 @@ function confirmSquare() {
     || findInscribedSquare(state.shape.outer);
   if (inscribed) drawIdealSquare(inscribed);
   showSquareVerdict(res);
+  recordSquareScore(res.score);
   state.locked = true;
   updateActionButton();
   setTimeout(() => dom.newBtn.classList.add('pulse'), 900);
@@ -475,7 +481,8 @@ function initSquareInput() {
     const p = svgPoint(e);
     squareState.pointerType = e.pointerType;
     const outer = state.shape.outer;
-    const existing = pickExistingPoint(p);
+    const grabR = e.pointerType !== 'mouse' ? POINT_GRAB_R * 3 : POINT_GRAB_R;
+    const existing = pickExistingPoint(p, grabR);
     if (existing >= 0) {
       squareState.dragIdx = existing;
     } else if (squareState.points.length < 4) {

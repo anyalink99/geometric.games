@@ -29,6 +29,9 @@
       <g id="square-lines-layer"></g>
       <g id="square-points-layer"></g>
       <g id="square-hover-layer"></g>
+      <g id="mass-ideal-layer"></g>
+      <g id="mass-point-layer"></g>
+      <g id="mass-hover-layer"></g>
       <g id="label-layer"></g>
       <line id="cut-preview" class="cut-line preview" style="display:none"/>
     </svg>
@@ -62,6 +65,14 @@
           <li>After four points, press <b>Confirm</b> to score</li>
         </ul>
       </div>
+      <div class="help-mass">
+        <p>Find the <b>center of mass</b> of the shape — tap anywhere to place your guess.</p>
+        <ul>
+          <li>Shapes with holes shift the center of mass</li>
+          <li>Tap anywhere on the board to drop your guess</li>
+          <li>Drag the point to fine-tune, then press <b>Confirm</b></li>
+        </ul>
+      </div>
       <div class="close-row"><button class="btn" id="close-help">Got it</button></div>
     </div>
   </div>
@@ -69,10 +80,24 @@
   <div class="modal-back" id="stats-modal">
     <div class="modal">
       <h2>STATS</h2>
-      <p>Cuts made: <b id="s-attempts">0</b></p>
-      <p>Best cut: <b id="s-best">—</b></p>
-      <p>Average diff: <b id="s-avg">—</b></p>
-      <p>Perfect cuts (&lt;0.5%): <b id="s-perfect">0</b></p>
+      <div id="stats-cut-section">
+        <p>Cuts made: <b id="s-attempts">0</b></p>
+        <p>Best cut: <b id="s-best">—</b></p>
+        <p>Average diff: <b id="s-avg">—</b></p>
+        <p>Perfect cuts (&lt;0.5%): <b id="s-perfect">0</b></p>
+      </div>
+      <div id="stats-square-section">
+        <p>Squares played: <b id="sq-attempts">0</b></p>
+        <p>Best score: <b id="sq-best">—</b></p>
+        <p>Average score: <b id="sq-avg">—</b></p>
+        <p>Perfect squares (&ge;97%): <b id="sq-perfect">0</b></p>
+      </div>
+      <div id="stats-mass-section">
+        <p>Shapes played: <b id="ms-attempts">0</b></p>
+        <p>Best off by: <b id="ms-best">—</b></p>
+        <p>Average off by: <b id="ms-avg">—</b></p>
+        <p>Perfect (&le;5): <b id="ms-perfect">0</b></p>
+      </div>
       <div class="close-row">
         <button class="btn secondary" id="reset-stats">Reset</button>
         <button class="btn" id="close-stats">Close</button>
@@ -93,21 +118,26 @@
           <div class="mode-title">Square</div>
           <div class="mode-desc">Place 4 points on the outline — make the cleanest square you can.</div>
         </button>
+        <button class="mode-card" data-mode="mass">
+          <div class="mode-title">Center of Mass</div>
+          <div class="mode-desc">Tap where you think the center of mass is — shapes with holes will fool you.</div>
+        </button>
       </div>
       <div class="close-row"><button class="btn" id="close-gamemode">Close</button></div>
     </div>
   </div>
 </div>
 
-<script src="js/constants.js"></script>
-<script src="js/random.js"></script>
-<script src="js/geometry.js"></script>
-<script src="js/shapes.js"></script>
+<script src="js/core/constants.js"></script>
+<script src="js/core/random.js"></script>
+<script src="js/geometry/geometry.js"></script>
+<script src="js/geometry/shapes.js"></script>
 <script src="js/stats.js"></script>
-<script src="js/modals.js"></script>
-<script src="js/render.js"></script>
-<script src="js/input.js"></script>
-<script src="js/square.js"></script>
+<script src="js/ui/modals.js"></script>
+<script src="js/ui/render.js"></script>
+<script src="js/modes/cut.js"></script>
+<script src="js/modes/square.js"></script>
+<script src="js/modes/mass.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>
 </body>

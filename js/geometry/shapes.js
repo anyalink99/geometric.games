@@ -318,6 +318,92 @@ function tryMakeCavity(outer) {
   return null;
 }
 
+function tryMakeCavityAvoiding(outer, existingHoles) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of outer) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const margin = 9;
+  for (let tries = 0; tries < 70; tries++) {
+    const cx = rand(minX, maxX);
+    const cy = rand(minY, maxY);
+    const center = { x: cx, y: cy };
+    if (!pointInPolygon(center, outer)) continue;
+    let blocked = false;
+    for (const h of existingHoles) {
+      if (pointInPolygon(center, h)) { blocked = true; break; }
+    }
+    if (blocked) continue;
+    let minDist = distPointToPolygon(center, outer);
+    for (const h of existingHoles) {
+      minDist = Math.min(minDist, distPointToPolygon(center, h));
+    }
+    if (minDist < 20) continue;
+    const maxR = Math.min(minDist - margin, 30);
+    if (maxR < 9) continue;
+    const type = Math.random() < 0.6 ? 'circle' : 'lens';
+    let pts;
+    if (type === 'circle') {
+      const r = rand(9, maxR);
+      pts = makeCircleCavity(cx, cy, r);
+    } else {
+      const ang = rand(0, TAU);
+      const len = rand(22, Math.min(64, (minDist - margin) * 2 * 0.85));
+      const bulge = len * rand(0.22, 0.42);
+      if (bulge > maxR) continue;
+      pts = makeLensCavity(cx, cy, len, ang, bulge);
+    }
+    if (!cavityFitsInside(pts, outer, margin)) continue;
+    let overlaps = false;
+    for (const h of existingHoles) {
+      for (const p of pts) {
+        if (pointInPolygon(p, h)) { overlaps = true; break; }
+      }
+      if (overlaps) break;
+    }
+    if (overlaps) continue;
+    return pts;
+  }
+  return null;
+}
+
+function generateMassShape() {
+  const r = Math.random();
+  let desiredHoles;
+  if (r < 0.03)       desiredHoles = 3;
+  else if (r < 0.13)  desiredHoles = 2;
+  else if (r < 0.43)  desiredHoles = 1;
+  else                desiredHoles = 0;
+
+  for (let attempt = 0; attempt < 35; attempt++) {
+    const built = generateOuter();
+    let shape = { outer: built.pts, holes: [] };
+    shape = centerShapeObject(shape);
+    const normalized = normalizeShapeArea(shape);
+    if (!normalized) continue;
+
+    if (desiredHoles === 0) return normalized;
+
+    const holes = [];
+    for (let hi = 0; hi < desiredHoles; hi++) {
+      const cavity = tryMakeCavityAvoiding(normalized.outer, holes);
+      if (!cavity) break;
+      holes.push(cavity);
+    }
+
+    if (holes.length === 0) continue;
+
+    const withHoles = { outer: normalized.outer, holes };
+    const renormalized = normalizeShapeArea(withHoles);
+    if (!renormalized) continue;
+    return renormalized;
+  }
+  return generateShape();
+}
+
 function generateShape() {
   for (let attempt = 0; attempt < 30; attempt++) {
     const built = generateOuter();

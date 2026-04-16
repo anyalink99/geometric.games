@@ -93,6 +93,23 @@ function distPointToSegment(p, a, b) {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
+function shapeCentroid(shape) {
+  const aOuter = polygonArea(shape.outer);
+  const cOuter = polygonCentroid(shape.outer);
+  let totalArea = aOuter;
+  let cx = aOuter * cOuter.x;
+  let cy = aOuter * cOuter.y;
+  for (const h of shape.holes) {
+    const a = polygonArea(h);
+    const c = polygonCentroid(h);
+    totalArea -= a;
+    cx -= a * c.x;
+    cy -= a * c.y;
+  }
+  if (totalArea < 1e-6) return { x: CX, y: CY };
+  return { x: cx / totalArea, y: cy / totalArea };
+}
+
 function distPointToPolygon(p, pts) {
   let m = Infinity;
   for (let i = 0, n = pts.length; i < n; i++) {
