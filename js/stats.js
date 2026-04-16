@@ -119,7 +119,7 @@ function recordSquareScore(score) {
   squareStats.attempts++;
   squareStats.sumScore += score;
   if (score > squareStats.bestScore) squareStats.bestScore = score;
-  if (score >= 97) squareStats.perfect++;
+  if (score > 96) squareStats.perfect++;
   saveSquareStats();
 }
 

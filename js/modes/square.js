@@ -269,7 +269,7 @@ function drawIdealSquare(corners) {
 
 function showSquareVerdict(res) {
   let cls;
-  if (res.score >= 97)      cls = 'perfect';
+  if (res.score > 96)       cls = 'perfect';
   else if (res.score >= 90) cls = 'great';
   else if (res.score >= 75) cls = 'good';
   else                      cls = 'fair';

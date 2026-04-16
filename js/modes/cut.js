@@ -124,7 +124,7 @@ function showCutVerdict(diff) {
   else if (diff < 5)   cls = 'good';
   else                 cls = 'fair';
   dom.scoreLine.innerHTML = `
-    <div class="verdict ${cls}" id="verdict">Diff: ${diff.toFixed(2)}%</div>
+    <div class="verdict ${cls}" id="verdict">Off by: ${diff.toFixed(2)}%</div>
   `;
   const v = document.getElementById('verdict');
   v.getBoundingClientRect();
@@ -150,7 +150,7 @@ function performCut(p0, p1) {
   if (total < 1) return;
   const pctA = (aA / total) * 100;
   const pctB = (aB / total) * 100;
-  const diff = Math.abs(pctA - pctB);
+  const diff = Math.abs(pctA - pctB) / 2;
 
   recordDiff(diff);
   state.locked = true;
