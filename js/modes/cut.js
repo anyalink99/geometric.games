@@ -7,6 +7,7 @@ const cutState = {
   dragCutIdx: -1,
   dragEndIdx: -1,
   dragLineMode: false,
+  dragLineConstrained: false,
   dragOrigin: null,
   dragInitialCuts: null,
   confirmed: false,
@@ -28,6 +29,7 @@ function cutReset() {
   cutState.dragCutIdx = -1;
   cutState.dragEndIdx = -1;
   cutState.dragLineMode = false;
+  cutState.dragLineConstrained = false;
   cutState.dragOrigin = null;
   cutState.dragInitialCuts = null;
   cutState.confirmed = false;
@@ -199,6 +201,26 @@ function makePiece(shape) {
   return makeShapeGroup(shape, 'piece');
 }
 
+function pieceTouchesCutLine(piece, cut) {
+  const { nx, ny, c } = halfPlaneFromCut(cut);
+  const EPS = 0.5;
+  const outer = piece.outer;
+  for (let i = 0, n = outer.length; i < n; i++) {
+    const a = outer[i], b = outer[(i + 1) % n];
+    if (Math.abs(nx * a.x + ny * a.y + c) < EPS &&
+        Math.abs(nx * b.x + ny * b.y + c) < EPS) return true;
+  }
+  return false;
+}
+
+function findTriMiddleIndex(pieces, cuts) {
+  for (let i = 0; i < pieces.length; i++) {
+    if (pieceTouchesCutLine(pieces[i], cuts[0]) &&
+        pieceTouchesCutLine(pieces[i], cuts[1])) return i;
+  }
+  return -1;
+}
+
 function drawCutFlash(cuts) {
   dom.cutLayer.innerHTML = '';
   for (const cut of cuts) {
@@ -271,6 +293,18 @@ function pickCutHandle(p, grabR) {
     }
   }
   return null;
+}
+
+function pickCutLine(p, threshold) {
+  const thr = threshold ?? LINE_GRAB_THRESHOLD;
+  let bestD = thr, bestIdx = -1;
+  for (let i = 0; i < cutState.cuts.length; i++) {
+    const c = cutState.cuts[i];
+    const pr = closestOnSegment(p, c.a, c.b);
+    const d = Math.hypot(p.x - pr.x, p.y - pr.y);
+    if (d < bestD) { bestD = d; bestIdx = i; }
+  }
+  return bestIdx;
 }
 
 function targetRatioLabel() {
@@ -483,13 +517,20 @@ function finalizeCut() {
     return g;
   });
 
-  const cxShape = CX, cyShape = CY;
   const offset = 22;
-  res.pieces.forEach((p, i) => {
+  const middleIdx = v === 'tri' ? findTriMiddleIndex(res.pieces, cutState.cuts) : -1;
+  const animCenter = middleIdx >= 0
+    ? polygonCentroid(res.pieces[middleIdx].outer)
+    : { x: CX, y: CY };
+  const pieceOffsets = res.pieces.map((p, i) => {
+    if (i === middleIdx) return { tx: 0, ty: 0, nx: 0, ny: 0 };
     const cen = polygonCentroid(p.outer);
-    const dx = cen.x - cxShape, dy = cen.y - cyShape;
+    const dx = cen.x - animCenter.x, dy = cen.y - animCenter.y;
     const dl = Math.hypot(dx, dy) || 1;
-    const tx = (dx / dl) * offset, ty = (dy / dl) * offset;
+    return { tx: (dx / dl) * offset, ty: (dy / dl) * offset, nx: dx / dl, ny: dy / dl };
+  });
+  res.pieces.forEach((p, i) => {
+    const { tx, ty } = pieceOffsets[i];
     groups[i].style.transform = 'translate(0px, 0px)';
     groups[i].getBoundingClientRect();
     requestAnimationFrame(() => {
@@ -502,9 +543,9 @@ function finalizeCut() {
   setTimeout(() => {
     res.pieces.forEach((p, i) => {
       const cen = polygonCentroid(p.outer);
-      const dx = cen.x - cxShape, dy = cen.y - cyShape;
-      const dl = Math.hypot(dx, dy) || 1;
-      addCutLabel(cen, dx / dl, dy / dl, +1, offset, res.pcts[i]);
+      const { nx, ny } = pieceOffsets[i];
+      const labelOffset = i === middleIdx ? 0 : offset;
+      addCutLabel(cen, nx, ny, +1, labelOffset, res.pcts[i]);
     });
   }, 60);
 
@@ -567,20 +608,26 @@ function cutOnNewShape() {
   renderCutAll();
 }
 
-function translateAngleLine(delta) {
-  if (!cutState.dragInitialCuts || cutState.dragInitialCuts.length === 0) return;
-  const init = cutState.dragInitialCuts[0];
+function translateCutLine(idx, delta, constrainPerp) {
+  const init = cutState.dragInitialCuts && cutState.dragInitialCuts[0];
+  if (!init) return;
   const dx = init.b.x - init.a.x, dy = init.b.y - init.a.y;
   const len = Math.hypot(dx, dy) || 1;
   const ux = dx / len, uy = dy / len;
   const nx = -uy, ny = ux;
-  const shift = delta.x * nx + delta.y * ny;
-  const mx = (init.a.x + init.b.x) / 2 + nx * shift;
-  const my = (init.a.y + init.b.y) / 2 + ny * shift;
+  let sx, sy;
+  if (constrainPerp) {
+    const shift = delta.x * nx + delta.y * ny;
+    sx = nx * shift; sy = ny * shift;
+  } else {
+    sx = delta.x; sy = delta.y;
+  }
+  const mx = (init.a.x + init.b.x) / 2 + sx;
+  const my = (init.a.y + init.b.y) / 2 + sy;
   const p0 = { x: mx, y: my };
   const p1 = { x: mx + ux * 10, y: my + uy * 10 };
   const chord = lineShapeChord(p0, p1, state.shape.outer);
-  if (chord) cutState.cuts[0] = chord;
+  if (chord) cutState.cuts[idx] = chord;
 }
 
 function updateCutCursor(overHandle) {
@@ -596,168 +643,6 @@ function updateCutCursor(overHandle) {
   if (cutState.drawing) { dom.hitPad.style.cursor = 'crosshair'; return; }
   if (cutState.cuts.length < cutRequiredCount()) { dom.hitPad.style.cursor = 'crosshair'; return; }
   dom.hitPad.style.cursor = 'default';
-}
-
-function initCutInput() {
-  const { hitPad, cutPreview } = dom;
-
-  function setPreview() {
-    if (!cutState.drawing) return;
-    const { p0, p1 } = cutState.drawing;
-    cutPreview.setAttribute('x1', p0.x);
-    cutPreview.setAttribute('y1', p0.y);
-    cutPreview.setAttribute('x2', p1.x);
-    cutPreview.setAttribute('y2', p1.y);
-    cutPreview.classList.toggle('valid', strokeCrossesShape(p0, p1, state.shape.outer));
-  }
-
-  function clearPreview() {
-    cutPreview.style.display = 'none';
-    cutPreview.classList.remove('valid');
-  }
-
-  hitPad.addEventListener('pointerdown', e => {
-    if (state.mode !== 'cut') return;
-    if (cutState.confirmed) return;
-    if (cutState.activePointerId !== null) return;
-    e.preventDefault();
-    const p = svgPoint(e);
-    const v = cutVariation();
-
-    if (v === 'angle') {
-      cutState.activePointerId = e.pointerId;
-      cutState.dragLineMode = true;
-      cutState.dragOrigin = p;
-      cutState.dragInitialCuts = cutState.cuts.map(c => ({ a: { ...c.a }, b: { ...c.b } }));
-      hitPad.setPointerCapture(e.pointerId);
-      updateCutCursor(false);
-      return;
-    }
-
-    const grabR = e.pointerType !== 'mouse' ? POINT_GRAB_R * 3 : POINT_GRAB_R;
-    const handle = pickCutHandle(p, grabR);
-    if (handle) {
-      cutState.dragCutIdx = handle.cut;
-      cutState.dragEndIdx = handle.end;
-      cutState.activePointerId = e.pointerId;
-      hitPad.setPointerCapture(e.pointerId);
-      updateCutCursor(true);
-      return;
-    }
-
-    if (cutState.cuts.length < cutRequiredCount()) {
-      cutState.drawing = { p0: p, p1: { ...p }, moved: false };
-      cutState.activePointerId = e.pointerId;
-      hitPad.setPointerCapture(e.pointerId);
-      clearPreview();
-      updateCutCursor(false);
-    }
-  });
-
-  hitPad.addEventListener('pointermove', e => {
-    if (state.mode !== 'cut') return;
-    e.preventDefault();
-    const p = svgPoint(e);
-
-    if (e.pointerId !== cutState.activePointerId) {
-      if (e.pointerType === 'mouse' && !cutState.confirmed) {
-        const overHandle = !!pickCutHandle(p, POINT_GRAB_R);
-        updateCutCursor(overHandle);
-      }
-      return;
-    }
-
-    if (cutState.dragLineMode) {
-      const delta = { x: p.x - cutState.dragOrigin.x, y: p.y - cutState.dragOrigin.y };
-      translateAngleLine(delta);
-      renderCutSegments();
-      renderCutHandles();
-      return;
-    }
-
-    if (cutState.drawing) {
-      cutState.drawing.p1 = p;
-      if (!cutState.drawing.moved) {
-        if (Math.hypot(p.x - cutState.drawing.p0.x, p.y - cutState.drawing.p0.y) < MOVE_THRESHOLD) return;
-        cutState.drawing.moved = true;
-        cutPreview.style.display = '';
-      }
-      setPreview();
-      return;
-    }
-
-    if (cutState.dragCutIdx >= 0) {
-      const cut = cutState.cuts[cutState.dragCutIdx];
-      if (cutState.dragEndIdx === 0) cut.a = p; else cut.b = p;
-      renderCutSegments();
-      renderCutHandles();
-      return;
-    }
-  });
-
-  hitPad.addEventListener('pointerleave', e => {
-    if (state.mode !== 'cut') return;
-    if (e.pointerType !== 'mouse') return;
-    if (cutState.activePointerId !== null) return;
-    updateCutCursor(false);
-  });
-
-  function endStroke(e, cancelled) {
-    if (state.mode !== 'cut') return;
-    if (e.pointerId !== cutState.activePointerId) return;
-    cutState.activePointerId = null;
-    if (hitPad.hasPointerCapture && hitPad.hasPointerCapture(e.pointerId)) {
-      hitPad.releasePointerCapture(e.pointerId);
-    }
-
-    if (cutState.dragLineMode) {
-      cutState.dragLineMode = false;
-      cutState.dragOrigin = null;
-      cutState.dragInitialCuts = null;
-      updateActionButton();
-      updateCutCursor(false);
-      return;
-    }
-
-    if (cutState.drawing) {
-      const d = cutState.drawing;
-      cutState.drawing = null;
-      clearPreview();
-      if (cancelled || !d.moved) { updateCutCursor(false); return; }
-      d.p1 = svgPoint(e);
-      if (!strokeCrossesShape(d.p0, d.p1, state.shape.outer)) {
-        flashCutHint('Stroke must fully cross the shape');
-        updateCutCursor(false);
-        return;
-      }
-      const chord = lineShapeChord(d.p0, d.p1, state.shape.outer);
-      if (!chord) {
-        flashCutHint('Stroke must fully cross the shape');
-        updateCutCursor(false);
-        return;
-      }
-      cutState.cuts.push(chord);
-      renderCutAll();
-      const endP = svgPoint(e);
-      updateCutCursor(!!pickCutHandle(endP, POINT_GRAB_R));
-      return;
-    }
-
-    if (cutState.dragCutIdx >= 0) {
-      const cut = cutState.cuts[cutState.dragCutIdx];
-      const q = cutState.dragEndIdx === 0 ? cut.a : cut.b;
-      cutState.dragCutIdx = -1;
-      cutState.dragEndIdx = -1;
-      updateActionButton();
-      const releasedAt = svgPoint(e);
-      const stillOver = Math.hypot(releasedAt.x - q.x, releasedAt.y - q.y) < POINT_GRAB_R;
-      updateCutCursor(stillOver);
-      return;
-    }
-  }
-
-  hitPad.addEventListener('pointerup',     e => endStroke(e, false));
-  hitPad.addEventListener('pointercancel', e => endStroke(e, true));
 }
 
 function setCutHint() { updateCutHint(); }

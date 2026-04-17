@@ -1,7 +1,11 @@
 const squareState = {
   points: [],
   hover: null,
+  hoverRaw: null,
   dragIdx: -1,
+  dragLineIdxs: null,
+  dragInitialPoints: null,
+  dragOrigin: null,
   confirmed: false,
   activePointerId: null,
   pointerType: null,
@@ -19,18 +23,113 @@ function pickExistingPoint(p, grabR) {
 }
 
 function orderByCentroid(pts) {
+  return orderedIndicesByCentroid(pts).map(i => pts[i]);
+}
+
+function orderedIndicesByCentroid(pts) {
   let cx = 0, cy = 0;
   for (const p of pts) { cx += p.x; cy += p.y; }
   cx /= pts.length; cy /= pts.length;
-  return pts.slice().sort((a, b) =>
-    Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx)
+  const idxs = pts.map((_, i) => i);
+  idxs.sort((a, b) =>
+    Math.atan2(pts[a].y - cy, pts[a].x - cx) - Math.atan2(pts[b].y - cy, pts[b].x - cx)
   );
+  return idxs;
+}
+
+function squareEdges(pts) {
+  if (pts.length < 2) return [];
+  const idxs = orderedIndicesByCentroid(pts);
+  if (pts.length === 2) return [[idxs[0], idxs[1]]];
+  if (pts.length === 3) {
+    const ordered = idxs.map(i => pts[i]);
+    const edges = [[0, 1], [1, 2], [0, 2]];
+    const lens = edges.map(([i, j]) =>
+      Math.hypot(ordered[i].x - ordered[j].x, ordered[i].y - ordered[j].y)
+    );
+    let bestSkip = 0, bestDiff = Infinity;
+    for (let s = 0; s < 3; s++) {
+      const kept = [0, 1, 2].filter(k => k !== s);
+      const d = Math.abs(lens[kept[0]] - lens[kept[1]]);
+      if (d < bestDiff) { bestDiff = d; bestSkip = s; }
+    }
+    const out = [];
+    for (let s = 0; s < 3; s++) {
+      if (s === bestSkip) continue;
+      out.push([idxs[edges[s][0]], idxs[edges[s][1]]]);
+    }
+    return out;
+  }
+  const out = [];
+  for (let i = 0; i < 4; i++) out.push([idxs[i], idxs[(i + 1) % 4]]);
+  return out;
+}
+
+function pickSquareLine(p, threshold) {
+  const thr = threshold ?? LINE_GRAB_THRESHOLD;
+  let bestD = thr, bestPair = null;
+  const pts = squareState.points;
+  for (const [i, j] of squareEdges(pts)) {
+    const pr = closestOnSegment(p, pts[i], pts[j]);
+    const d = Math.hypot(p.x - pr.x, p.y - pr.y);
+    if (d < bestD) { bestD = d; bestPair = [i, j]; }
+  }
+  return bestPair;
+}
+
+function translateSquareLine(delta) {
+  if (!squareState.dragLineIdxs || !squareState.dragInitialPoints) return;
+  const [iA, iB] = squareState.dragLineIdxs;
+  const [A0, B0] = squareState.dragInitialPoints;
+  const dx = B0.x - A0.x, dy = B0.y - A0.y;
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-6) return;
+  const ux = dx / L, uy = dy / L;
+  const nx = -uy, ny = ux;
+  const perpShift = delta.x * nx + delta.y * ny;
+  const mx = (A0.x + B0.x) / 2 + nx * perpShift;
+  const my = (A0.y + B0.y) / 2 + ny * perpShift;
+
+  const outer = state.shape.outer;
+  const ts = [];
+  for (let i = 0, n = outer.length; i < n; i++) {
+    const a = outer[i], b = outer[(i + 1) % n];
+    const vx = b.x - a.x, vy = b.y - a.y;
+    const denom = ux * (-vy) - uy * (-vx);
+    if (Math.abs(denom) < 1e-9) continue;
+    const tx = a.x - mx, ty = a.y - my;
+    const t = (tx * (-vy) - ty * (-vx)) / denom;
+    const s = (ux * ty - uy * tx) / denom;
+    if (s >= -0.001 && s <= 1.001) ts.push(t);
+  }
+  if (ts.length < 2) return;
+
+  const targetA = -L / 2, targetB = L / 2;
+  let bestA = null, bestAd = Infinity;
+  for (const t of ts) {
+    const d = Math.abs(t - targetA);
+    if (d < bestAd) { bestAd = d; bestA = t; }
+  }
+  let bestB = null, bestBd = Infinity;
+  for (const t of ts) {
+    if (bestA !== null && Math.abs(t - bestA) < 1e-6) continue;
+    const d = Math.abs(t - targetB);
+    if (d < bestBd) { bestBd = d; bestB = t; }
+  }
+  if (bestA === null || bestB === null) return;
+
+  squareState.points[iA] = { x: mx + ux * bestA, y: my + uy * bestA };
+  squareState.points[iB] = { x: mx + ux * bestB, y: my + uy * bestB };
 }
 
 function squareReset() {
   squareState.points = [];
   squareState.hover = null;
+  squareState.hoverRaw = null;
   squareState.dragIdx = -1;
+  squareState.dragLineIdxs = null;
+  squareState.dragInitialPoints = null;
+  squareState.dragOrigin = null;
   squareState.confirmed = false;
   squareState.activePointerId = null;
   squareState.idealCorners = null;
@@ -96,30 +195,8 @@ function drawSquarePoint(p, idx) {
 function renderSquareLines() {
   dom.squareLines.innerHTML = '';
   const pts = squareState.points;
-  if (pts.length === 2) {
-    dom.squareLines.appendChild(drawSquareLine(pts[0], pts[1]));
-  } else if (pts.length === 3) {
-    const ordered = orderByCentroid(pts);
-    const edges = [[0, 1], [1, 2], [0, 2]];
-    const lens = edges.map(([i, j]) =>
-      Math.hypot(ordered[i].x - ordered[j].x, ordered[i].y - ordered[j].y)
-    );
-    let bestSkip = 0, bestDiff = Infinity;
-    for (let s = 0; s < 3; s++) {
-      const kept = [0, 1, 2].filter(k => k !== s);
-      const d = Math.abs(lens[kept[0]] - lens[kept[1]]);
-      if (d < bestDiff) { bestDiff = d; bestSkip = s; }
-    }
-    for (let s = 0; s < 3; s++) {
-      if (s === bestSkip) continue;
-      const [i, j] = edges[s];
-      dom.squareLines.appendChild(drawSquareLine(ordered[i], ordered[j]));
-    }
-  } else if (pts.length === 4) {
-    const ordered = orderByCentroid(pts);
-    for (let i = 0; i < 4; i++) {
-      dom.squareLines.appendChild(drawSquareLine(ordered[i], ordered[(i + 1) % 4]));
-    }
+  for (const [i, j] of squareEdges(pts)) {
+    dom.squareLines.appendChild(drawSquareLine(pts[i], pts[j]));
   }
 }
 
@@ -130,24 +207,32 @@ function renderSquarePoints() {
   });
 }
 
-function updateSquareCursor(overExisting, dragging) {
+function updateSquareCursor(overGrabbable, dragging) {
   if (state.mode !== 'square') { dom.hitPad.style.cursor = ''; return; }
   if (squareState.confirmed) { dom.hitPad.style.cursor = 'default'; return; }
   if (dragging) dom.hitPad.style.cursor = 'grabbing';
-  else if (overExisting) dom.hitPad.style.cursor = 'grab';
+  else if (overGrabbable) dom.hitPad.style.cursor = 'grab';
   else if (squareState.points.length >= 4) dom.hitPad.style.cursor = 'default';
   else dom.hitPad.style.cursor = 'crosshair';
+}
+
+function isSquareDragging() {
+  return squareState.dragIdx >= 0 || !!squareState.dragLineIdxs;
 }
 
 function renderSquareHover() {
   dom.squareHover.innerHTML = '';
   if (squareState.confirmed) return;
-  if (!squareState.hover) { updateSquareCursor(false, squareState.dragIdx >= 0); return; }
+  const dragging = isSquareDragging();
+  const raw = squareState.hoverRaw;
+  if (!raw) { updateSquareCursor(false, dragging); return; }
   if (squareState.pointerType && squareState.pointerType !== 'mouse') return;
-  const overExisting = pickExistingPoint(squareState.hover) >= 0;
-  updateSquareCursor(overExisting, squareState.dragIdx >= 0);
-  if (overExisting) return;
+  const overExisting = pickExistingPoint(raw) >= 0;
+  const overLine = !overExisting && pickSquareLine(raw) !== null;
+  updateSquareCursor(overExisting || overLine, dragging);
+  if (overExisting || overLine) return;
   if (squareState.points.length >= 4) return;
+  if (!squareState.hover) return;
   const c = document.createElementNS(SVG_NS, 'circle');
   c.setAttribute('cx', squareState.hover.x);
   c.setAttribute('cy', squareState.hover.y);
@@ -312,72 +397,3 @@ function confirmSquare() {
   setTimeout(() => dom.newBtn.classList.add('pulse'), 900);
 }
 
-function initSquareInput() {
-  const hit = dom.hitPad;
-
-  hit.addEventListener('pointerdown', e => {
-    if (state.mode !== 'square') return;
-    if (squareState.confirmed) return;
-    if (squareState.activePointerId !== null) return;
-    e.preventDefault();
-    const p = svgPoint(e);
-    squareState.pointerType = e.pointerType;
-    const outer = state.shape.outer;
-    const grabR = e.pointerType !== 'mouse' ? POINT_GRAB_R * 3 : POINT_GRAB_R;
-    const existing = pickExistingPoint(p, grabR);
-    if (existing >= 0) {
-      squareState.dragIdx = existing;
-    } else if (squareState.points.length < 4) {
-      const proj = projectToOutline(p, outer);
-      if (!proj) return;
-      squareState.points.push(proj);
-      squareState.dragIdx = squareState.points.length - 1;
-    } else {
-      return;
-    }
-    squareState.activePointerId = e.pointerId;
-    hit.setPointerCapture(e.pointerId);
-    squareState.hover = null;
-    renderSquareAll();
-  });
-
-  hit.addEventListener('pointermove', e => {
-    if (state.mode !== 'square') return;
-    if (squareState.confirmed) return;
-    e.preventDefault();
-    squareState.pointerType = e.pointerType;
-    const p = svgPoint(e);
-    const outer = state.shape.outer;
-    if (squareState.dragIdx >= 0 && e.pointerId === squareState.activePointerId) {
-      const proj = projectToOutline(p, outer);
-      if (proj) {
-        squareState.points[squareState.dragIdx] = proj;
-        renderSquareLines();
-        renderSquarePoints();
-      }
-    } else if (e.pointerType === 'mouse') {
-      squareState.hover = projectToOutline(p, outer);
-      renderSquareHover();
-    }
-  });
-
-  function endDrag(e) {
-    if (state.mode !== 'square') return;
-    if (e.pointerId !== squareState.activePointerId) return;
-    if (hit.hasPointerCapture && hit.hasPointerCapture(e.pointerId)) {
-      hit.releasePointerCapture(e.pointerId);
-    }
-    squareState.activePointerId = null;
-    squareState.dragIdx = -1;
-    renderSquareAll();
-  }
-  hit.addEventListener('pointerup', endDrag);
-  hit.addEventListener('pointercancel', endDrag);
-
-  hit.addEventListener('pointerleave', e => {
-    if (state.mode !== 'square') return;
-    if (e.pointerType !== 'mouse') return;
-    squareState.hover = null;
-    renderSquareHover();
-  });
-}
