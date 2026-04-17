@@ -1,5 +1,5 @@
 const MODE_SLUGS = { cut: 'cut', inscribe: 'inscribe', mass: 'mass' };
-const SLUG_MODES = { cut: 'cut', inscribe: 'inscribe', mass: 'mass' };
+const SLUG_MODES = { cut: 'cut', inscribe: 'inscribe', square: 'inscribe', mass: 'mass' };
 const HASH_RE = /^[a-z0-9]{6,64}$/i;
 
 let BASE_PATH = '';

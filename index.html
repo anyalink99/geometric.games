@@ -17,7 +17,7 @@
       path = window.location.pathname;
     }
     var parts = path.split('/').filter(Boolean);
-    var modes = { cut: 1, inscribe: 1, mass: 1 };
+    var modes = { cut: 1, inscribe: 1, mass: 1, square: 1 };
     if (parts.length >= 2 && modes[parts[parts.length - 2]]) {
       parts = parts.slice(0, -2);
     } else if (parts.length >= 1 && modes[parts[parts.length - 1]]) {
