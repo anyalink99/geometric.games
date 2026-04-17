@@ -138,3 +138,92 @@ function findInscribedSquare(outer, opts) {
   }
   return best ? best.corners : null;
 }
+
+function ngonCornersFromEdge(tA, tB, sign, N, param) {
+  const A = pointAtT(tA, param);
+  const B = pointAtT(tB, param);
+  const dx = B.x - A.x, dy = B.y - A.y;
+  const side = Math.hypot(dx, dy);
+  if (side < 1e-6) return null;
+  const ux = dx / side, uy = dy / side;
+  const vx = -uy * sign, vy = ux * sign;
+  const apothem = side / (2 * Math.tan(Math.PI / N));
+  const R = side / (2 * Math.sin(Math.PI / N));
+  const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+  const cx = mx + vx * apothem, cy = my + vy * apothem;
+  const a0 = Math.atan2(A.y - cy, A.x - cx);
+  const corners = new Array(N);
+  for (let k = 0; k < N; k++) {
+    const a = a0 + sign * 2 * Math.PI * k / N;
+    corners[k] = { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
+  }
+  return { corners, side, center: { x: cx, y: cy } };
+}
+
+function ngonCost(tA, tB, sign, N, param, outer) {
+  const n = ngonCornersFromEdge(tA, tB, sign, N, param);
+  if (!n) return Infinity;
+  let cost = 0;
+  for (let k = 2; k < N; k++) cost += distToOutlineSq(n.corners[k], outer);
+  return cost;
+}
+
+function ngonOptimize(tA, tB, sign, N, param, outer, iters) {
+  const h = 5e-4;
+  let step = 1 / 28;
+  for (let iter = 0; iter < iters; iter++) {
+    const f0 = ngonCost(tA, tB, sign, N, param, outer);
+    if (f0 < 4e-5) break;
+    const gA = (ngonCost(tA + h, tB, sign, N, param, outer) - ngonCost(tA - h, tB, sign, N, param, outer)) / (2 * h);
+    const gB = (ngonCost(tA, tB + h, sign, N, param, outer) - ngonCost(tA, tB - h, sign, N, param, outer)) / (2 * h);
+    const gm = Math.hypot(gA, gB);
+    if (gm < 1e-11) break;
+    let lr = step, ok = false;
+    for (let k = 0; k < 24; k++) {
+      const nA = tA - lr * gA / gm, nB = tB - lr * gB / gm;
+      if (ngonCost(nA, nB, sign, N, param, outer) < f0) {
+        tA = nA; tB = nB; ok = true; break;
+      }
+      lr *= 0.5;
+    }
+    if (!ok) { step *= 0.5; if (step < 1e-9) break; }
+  }
+  return { tA, tB, sign, cost: ngonCost(tA, tB, sign, N, param, outer) };
+}
+
+function ngonValidate(tA, tB, sign, N, param, outer) {
+  const n = ngonCornersFromEdge(tA, tB, sign, N, param);
+  if (!n) return null;
+  const { corners, side, center } = n;
+  if (side < 14) return null;
+  if (!pointInPolygon(center, outer)) return null;
+  const out = [corners[0], corners[1]];
+  for (let k = 2; k < N; k++) out.push(projectToOutline(corners[k], outer));
+  return { corners: out, side };
+}
+
+function findInscribedRegularNgon(outer, N, opts) {
+  const Nsamp = (opts && opts.Nsamp) || 22;
+  const coarseIters = (opts && opts.coarseIters) || 22;
+  const topK = (opts && opts.topK) || 50;
+  const refineIters = (opts && opts.refineIters) || 240;
+  const MAX_COST = 200;
+  const param = buildOutlineParam(outer);
+  const coarse = [];
+  for (let i = 0; i < Nsamp; i++) {
+    for (let j = 0; j < Nsamp; j++) {
+      if (i === j) continue;
+      coarse.push(ngonOptimize(i / Nsamp, j / Nsamp, 1, N, param, outer, coarseIters));
+    }
+  }
+  coarse.sort((a, b) => a.cost - b.cost);
+  let best = null;
+  for (const c of coarse.slice(0, topK)) {
+    const r = ngonOptimize(c.tA, c.tB, c.sign, N, param, outer, refineIters);
+    if (r.cost > MAX_COST) continue;
+    const v = ngonValidate(r.tA, r.tB, c.sign, N, param, outer);
+    if (!v) continue;
+    if (!best || v.side > best.side) best = v;
+  }
+  return best ? best.corners : null;
+}

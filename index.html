@@ -120,13 +120,24 @@
         </div>
       </div>
       <div class="help-square">
-        <p>Place <b>four points</b> on the outline to form a square — the closer to a perfect square, the better.</p>
-        <ul>
-          <li>The nearest point on the outline follows your cursor</li>
-          <li>Tap / click to drop — drag points any time to adjust</li>
-          <li>After four points, press <b>Confirm</b> to score</li>
-        </ul>
-        <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons and smooth curves; for arbitrary Jordan curves it's still <i>open</i> after 110+ years.</p>
+        <div class="help-square-square">
+          <p>Place <b>four points</b> on the outline to form a square — the closer to a perfect square, the better.</p>
+          <ul>
+            <li>The nearest point on the outline follows your cursor</li>
+            <li>Tap / click to drop — drag points any time to adjust</li>
+            <li>After four points, press <b>Confirm</b> to score</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons and smooth curves; for arbitrary Jordan curves it's still <i>open</i> after 110+ years.</p>
+        </div>
+        <div class="help-square-triangle">
+          <p>Place <b>three points</b> on the outline to form an equilateral triangle.</p>
+          <ul>
+            <li>Same controls as Square — tap, drop, and drag to adjust</li>
+            <li>All three sides must be equal and every angle 60°</li>
+            <li>After three points, press <b>Confirm</b> to score</li>
+          </ul>
+          <p class="math-note"><b>Math:</b> every Jordan curve contains inscribed equilateral triangles — proven by Nielsen &amp; Wright (1990) and others. Unlike Toeplitz's square, the triangle case is fully settled.</p>
+        </div>
       </div>
       <div class="help-mass">
         <p>Find the <b>center of mass</b> of the shape — tap anywhere to place your guess.</p>
@@ -179,12 +190,12 @@
           <div class="mode-desc">Slice the shape.</div>
         </button>
         <button class="mode-card" data-mode="square">
-          <div class="mode-title">Square</div>
-          <div class="mode-desc">Make the square.</div>
+          <div class="mode-title">Inscribe</div>
+          <div class="mode-desc">Align the shape.</div>
         </button>
         <button class="mode-card" data-mode="mass">
           <div class="mode-title">Center of Mass</div>
-          <div class="mode-desc">Find the center of mass.</div>
+          <div class="mode-desc">Weight the shape.</div>
         </button>
       </div>
       <div class="close-row">
@@ -196,9 +207,9 @@
 
   <div class="modal-back" id="variations-modal">
     <div class="modal">
-      <h2>CUT VARIATIONS</h2>
-      <p>Same cut mechanics, new goals.</p>
-      <div class="mode-picker">
+      <h2 id="variations-title">VARIATIONS</h2>
+      <p id="variations-desc">Same mechanics, new goals.</p>
+      <div class="mode-picker" id="cut-var-picker">
         <button class="var-card" data-var="half">
           <div class="mode-title">Half</div>
           <div class="mode-desc">Classic 50/50 split by area — one straight line.</div>
@@ -218,6 +229,16 @@
         <button class="var-card" data-var="angle">
           <div class="mode-title">Constrained Angle</div>
           <div class="mode-desc">Line is pre-placed at a fixed angle. Drag it to find the 50/50 sweet spot.</div>
+        </button>
+      </div>
+      <div class="mode-picker" id="square-var-picker">
+        <button class="sq-var-card" data-sqvar="square">
+          <div class="mode-title">Square</div>
+          <div class="mode-desc">Four points forming a regular square — the classic inscribed-square challenge.</div>
+        </button>
+        <button class="sq-var-card" data-sqvar="triangle">
+          <div class="mode-title">Equilateral Triangle</div>
+          <div class="mode-desc">Three points with equal sides and 60° angles.</div>
         </button>
       </div>
       <div class="close-row"><button class="btn" id="close-variations">Close</button></div>

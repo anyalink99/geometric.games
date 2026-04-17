@@ -1,6 +1,7 @@
 const state = {
   mode: 'cut',
   cutVariation: 'half',
+  squareVariation: 'square',
   shape: { outer: [], holes: [] },
   locked: false,
   hash: null,
@@ -9,7 +10,7 @@ const state = {
 function updateActionButton() {
   const btn = dom.newBtn;
   let needsConfirm = false;
-  if (state.mode === 'square' && squareState.points.length === 4 && !squareState.confirmed) needsConfirm = true;
+  if (state.mode === 'square' && squareState.points.length === squareN() && !squareState.confirmed) needsConfirm = true;
   else if (state.mode === 'mass' && massState.guess && !massState.confirmed) needsConfirm = true;
   else if (state.mode === 'cut' && !cutState.confirmed) {
     const v = cutVariation();
@@ -84,6 +85,22 @@ function setCutVariation(v) {
     cutReset();
     renderShape(state.shape);
     cutOnNewShape();
+    dom.newBtn.classList.remove('pulse');
+    updateActionButton();
+  }
+}
+
+function setSquareVariation(v) {
+  if (!SQUARE_VARIATIONS.includes(v)) return;
+  state.squareVariation = v;
+  document.body.dataset.squareVariation = v;
+  try { localStorage.setItem(SQUARE_VARIATION_KEY, v); } catch (e) {}
+  if (state.mode === 'square') {
+    state.locked = false;
+    squareReset();
+    renderShape(state.shape);
+    precomputeIdeal(state.shape.outer);
+    renderSquareAll();
     dom.newBtn.classList.remove('pulse');
     updateActionButton();
   }

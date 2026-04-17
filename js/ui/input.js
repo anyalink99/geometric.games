@@ -205,7 +205,7 @@ function initSquareInput() {
         { ...squareState.points[linePair[1]] },
       ];
       squareState.dragOrigin = { x: p.x, y: p.y };
-    } else if (squareState.points.length < 4) {
+    } else if (squareState.points.length < squareN()) {
       const proj = projectToOutline(p, outer);
       if (!proj) return;
       squareState.points.push(proj);

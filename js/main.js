@@ -31,8 +31,13 @@ document.getElementById('close-stats').addEventListener('click', () => closeModa
 document.getElementById('close-variations').addEventListener('click', () => closeModal('variations-modal'));
 
 const variationsBtn = document.getElementById('variations-btn');
+const cutVarPicker = document.getElementById('cut-var-picker');
+const squareVarPicker = document.getElementById('square-var-picker');
+const variationsTitle = document.getElementById('variations-title');
+const variationsDesc = document.getElementById('variations-desc');
+
 function refreshVariationsBtn() {
-  variationsBtn.style.display = state.mode === 'cut' ? '' : 'none';
+  variationsBtn.style.display = (state.mode === 'cut' || state.mode === 'square') ? '' : 'none';
 }
 variationsBtn.addEventListener('click', () => {
   refreshVarCards();
@@ -46,9 +51,30 @@ document.querySelectorAll('.var-card').forEach(card => {
     setCutVariation(v);
   });
 });
+document.querySelectorAll('.sq-var-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const v = card.dataset.sqvar;
+    closeModal('variations-modal');
+    setSquareVariation(v);
+  });
+});
 function refreshVarCards() {
+  const isCut = state.mode === 'cut';
+  const isSquare = state.mode === 'square';
+  cutVarPicker.style.display = isCut ? '' : 'none';
+  squareVarPicker.style.display = isSquare ? '' : 'none';
+  if (isCut) {
+    variationsTitle.textContent = 'CUT VARIATIONS';
+    variationsDesc.textContent = 'Same cut mechanics, new goals.';
+  } else if (isSquare) {
+    variationsTitle.textContent = 'INSCRIBE VARIATIONS';
+    variationsDesc.textContent = 'Same placement mechanics, different inscribed shape.';
+  }
   document.querySelectorAll('.var-card').forEach(c => {
     c.classList.toggle('active', c.dataset.var === state.cutVariation);
+  });
+  document.querySelectorAll('.sq-var-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.sqvar === state.squareVariation);
   });
 }
 const statsCutSection = document.getElementById('stats-cut-section');
@@ -115,6 +141,14 @@ try {
 } catch (e) {}
 state.cutVariation = initialVar;
 document.body.dataset.cutVariation = initialVar;
+
+let initialSqVar = 'square';
+try {
+  const v = localStorage.getItem(SQUARE_VARIATION_KEY);
+  if (v && SQUARE_VARIATIONS.includes(v)) initialSqVar = v;
+} catch (e) {}
+state.squareVariation = initialSqVar;
+document.body.dataset.squareVariation = initialSqVar;
 
 refreshModeCards();
 newShape(initialRoute.hash || undefined, 'replace');
