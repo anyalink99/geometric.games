@@ -370,13 +370,13 @@ function tryMakeCavityAvoiding(outer, existingHoles) {
   return null;
 }
 
-function sampleMassHoleCount() {
+function sampleBalanceHoleCount() {
   let n = 1;
   while (Math.random() < 0.5 && n < 6) n++;
   return n;
 }
 
-function placeMassHole(outer, existing, targetArea, minX, maxX, minY, maxY) {
+function placeBalanceHole(outer, existing, targetArea, minX, maxX, minY, maxY) {
   for (let tries = 0; tries < 120; tries++) {
     const cx = rand(minX, maxX);
     const cy = rand(minY, maxY);
@@ -419,8 +419,8 @@ function placeMassHole(outer, existing, targetArea, minX, maxX, minY, maxY) {
   return null;
 }
 
-function generateMassShape() {
-  const targetHoleCount = sampleMassHoleCount();
+function generateBalanceShape() {
+  const targetHoleCount = sampleBalanceHoleCount();
   const targetRatio = 0.30 + Math.random() * 0.60;
 
   for (let outerAttempt = 0; outerAttempt < 25; outerAttempt++) {
@@ -450,7 +450,7 @@ function generateMassShape() {
         const remaining = Math.max(0, targetHoleArea - totalArea);
         const slots = targetHoleCount - h;
         const perHoleTarget = Math.max(300, remaining / slots);
-        const placed = placeMassHole(
+        const placed = placeBalanceHole(
           outer, clippedHoles, perHoleTarget,
           minX - padX, maxX + padX, minY - padY, maxY + padY
         );

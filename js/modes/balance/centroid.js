@@ -1,4 +1,4 @@
-const massState = {
+const centroidState = {
   guess: null,
   hover: null,
   confirmed: false,
@@ -7,30 +7,30 @@ const massState = {
   activePointerId: null,
 };
 
-function massCentroidReset() {
-  massState.guess = null;
-  massState.hover = null;
-  massState.confirmed = false;
-  massState.pointerType = null;
-  massState.dragging = false;
-  massState.activePointerId = null;
-  dom.massPoint.innerHTML = '';
-  dom.massHover.innerHTML = '';
-  dom.massIdeal.innerHTML = '';
+function centroidReset() {
+  centroidState.guess = null;
+  centroidState.hover = null;
+  centroidState.confirmed = false;
+  centroidState.pointerType = null;
+  centroidState.dragging = false;
+  centroidState.activePointerId = null;
+  dom.centroidPoint.innerHTML = '';
+  dom.balanceHover.innerHTML = '';
+  dom.centroidIdeal.innerHTML = '';
 }
 
 function isNearGuess(p, grabR) {
-  if (!massState.guess) return false;
-  const d = Math.hypot(p.x - massState.guess.x, p.y - massState.guess.y);
+  if (!centroidState.guess) return false;
+  const d = Math.hypot(p.x - centroidState.guess.x, p.y - centroidState.guess.y);
   return d < (grabR ?? POINT_GRAB_R);
 }
 
-function updateMassCursor(overExisting) {
-  if (state.mode !== 'mass') { dom.hitPad.style.cursor = ''; return; }
-  if (massState.confirmed) { dom.hitPad.style.cursor = 'default'; return; }
-  if (massState.dragging) dom.hitPad.style.cursor = 'grabbing';
-  else if (overExisting)  dom.hitPad.style.cursor = 'grab';
-  else                    dom.hitPad.style.cursor = 'crosshair';
+function updateCentroidCursor(overExisting) {
+  if (state.mode !== 'balance') { dom.hitPad.style.cursor = ''; return; }
+  if (centroidState.confirmed) { dom.hitPad.style.cursor = 'default'; return; }
+  if (centroidState.dragging) dom.hitPad.style.cursor = 'grabbing';
+  else if (overExisting)      dom.hitPad.style.cursor = 'grab';
+  else                        dom.hitPad.style.cursor = 'crosshair';
 }
 
 function clampToBoard(p) {
@@ -40,76 +40,76 @@ function clampToBoard(p) {
   };
 }
 
-function drawMassGuessPoint(p) {
-  dom.massPoint.innerHTML = '';
+function drawCentroidGuess(p) {
+  dom.centroidPoint.innerHTML = '';
   const g = document.createElementNS(SVG_NS, 'g');
-  g.setAttribute('class', 'mass-guess');
+  g.setAttribute('class', 'centroid-guess');
   const halo = document.createElementNS(SVG_NS, 'circle');
   halo.setAttribute('cx', p.x); halo.setAttribute('cy', p.y);
-  halo.setAttribute('r', 13); halo.setAttribute('class', 'mg-halo');
+  halo.setAttribute('r', 13); halo.setAttribute('class', 'centroid-halo');
   const dot = document.createElementNS(SVG_NS, 'circle');
   dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
-  dot.setAttribute('r', 6); dot.setAttribute('class', 'mg-dot');
+  dot.setAttribute('r', 6); dot.setAttribute('class', 'centroid-dot');
   g.appendChild(halo);
   g.appendChild(dot);
-  dom.massPoint.appendChild(g);
+  dom.centroidPoint.appendChild(g);
 }
 
-function drawMassHover(p) {
-  dom.massHover.innerHTML = '';
-  if (!p) { updateMassCursor(false); return; }
+function drawCentroidHover(p) {
+  dom.balanceHover.innerHTML = '';
+  if (!p) { updateCentroidCursor(false); return; }
   const overExisting = isNearGuess(p);
-  updateMassCursor(overExisting);
+  updateCentroidCursor(overExisting);
   if (overExisting) return;
   const c = document.createElementNS(SVG_NS, 'circle');
   c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
-  c.setAttribute('r', 5); c.setAttribute('class', 'mg-hover');
-  dom.massHover.appendChild(c);
+  c.setAttribute('r', 5); c.setAttribute('class', 'centroid-hover');
+  dom.balanceHover.appendChild(c);
 }
 
-function drawMassReveal(guess, actual, dist) {
-  dom.massIdeal.innerHTML = '';
+function drawCentroidReveal(guess, actual, dist) {
+  dom.centroidIdeal.innerHTML = '';
   const g = document.createElementNS(SVG_NS, 'g');
-  g.setAttribute('class', 'mass-reveal');
+  g.setAttribute('class', 'centroid-reveal');
 
   const ln = document.createElementNS(SVG_NS, 'line');
   ln.setAttribute('x1', guess.x); ln.setAttribute('y1', guess.y);
   ln.setAttribute('x2', actual.x); ln.setAttribute('y2', actual.y);
-  ln.setAttribute('class', 'mass-connector');
+  ln.setAttribute('class', 'centroid-connector');
   g.appendChild(ln);
 
   const arm = 10;
   const lh = document.createElementNS(SVG_NS, 'line');
   lh.setAttribute('x1', actual.x - arm); lh.setAttribute('y1', actual.y);
   lh.setAttribute('x2', actual.x + arm); lh.setAttribute('y2', actual.y);
-  lh.setAttribute('class', 'mass-centroid-arm');
+  lh.setAttribute('class', 'centroid-arm');
   g.appendChild(lh);
   const lv = document.createElementNS(SVG_NS, 'line');
   lv.setAttribute('x1', actual.x); lv.setAttribute('y1', actual.y - arm);
   lv.setAttribute('x2', actual.x); lv.setAttribute('y2', actual.y + arm);
-  lv.setAttribute('class', 'mass-centroid-arm');
+  lv.setAttribute('class', 'centroid-arm');
   g.appendChild(lv);
   const ring = document.createElementNS(SVG_NS, 'circle');
   ring.setAttribute('cx', actual.x); ring.setAttribute('cy', actual.y);
-  ring.setAttribute('r', 6); ring.setAttribute('class', 'mass-centroid-ring');
+  ring.setAttribute('r', 6); ring.setAttribute('class', 'centroid-ring');
   g.appendChild(ring);
 
-  dom.massIdeal.appendChild(g);
-  dom.massIdeal.getBoundingClientRect();
+  dom.centroidIdeal.appendChild(g);
+  dom.centroidIdeal.getBoundingClientRect();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => g.classList.add('show'));
   });
 }
 
 function updateCentroidHint() {
-  if (massState.confirmed) return;
-  const msg = massState.guess
+  if (centroidState.confirmed) return;
+  const msg = centroidState.guess
     ? 'Drag the point to adjust, or press Confirm'
     : 'Tap anywhere to place your center of mass guess';
   dom.scoreLine.innerHTML = `<div class="hint" id="hint">${msg}</div>`;
 }
 
-function showMassVerdict(dist) {
+function showCentroidVerdict(dist) {
   let cls;
   if (dist <= 5)       cls = 'perfect';
   else if (dist <= 15) cls = 'great';
@@ -126,16 +126,16 @@ function showMassVerdict(dist) {
 }
 
 function confirmCentroid() {
-  if (massState.confirmed) return;
-  if (!massState.guess) return;
-  massState.confirmed = true;
-  massState.hover = null;
-  dom.massHover.innerHTML = '';
+  if (centroidState.confirmed) return;
+  if (!centroidState.guess) return;
+  centroidState.confirmed = true;
+  centroidState.hover = null;
+  dom.balanceHover.innerHTML = '';
   const actual = shapeCentroid(state.shape);
-  const dist = Math.hypot(massState.guess.x - actual.x, massState.guess.y - actual.y);
-  drawMassReveal(massState.guess, actual, dist);
-  showMassVerdict(dist);
-  recordMassDist('centroid', dist);
+  const dist = Math.hypot(centroidState.guess.x - actual.x, centroidState.guess.y - actual.y);
+  drawCentroidReveal(centroidState.guess, actual, dist);
+  showCentroidVerdict(dist);
+  recordBalanceDist('centroid', dist);
   state.locked = true;
   dom.hitPad.style.cursor = 'default';
   updateActionButton();

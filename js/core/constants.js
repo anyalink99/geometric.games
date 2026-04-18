@@ -21,15 +21,14 @@ const LINE_GRAB_THRESHOLD = 10;
 
 const CUT_STATS_PREFIX = 'geometric.games.stats.cut.';
 const INSCRIBE_STATS_PREFIX = 'geometric.games.stats.inscribe.';
-const MASS_STATS_PREFIX = 'geometric.games.stats.mass.';
-const MASS_STATS_LEGACY_KEY = 'geometric.games.stats.mass.v1';
+const BALANCE_STATS_PREFIX = 'geometric.games.stats.balance.';
 
 const CUT_VARIATION_KEY = 'geometric.games.cut.variation.v1';
 const CUT_VARIATIONS = ['half', 'ratio', 'quad', 'tri', 'angle'];
 const INSCRIBE_VARIATION_KEY = 'geometric.games.inscribe.variation.v1';
 const INSCRIBE_VARIATIONS = ['square', 'triangle'];
-const MASS_VARIATION_KEY = 'geometric.games.mass.variation.v1';
-const MASS_VARIATIONS = ['centroid', 'balance'];
+const BALANCE_VARIATION_KEY = 'geometric.games.balance.variation.v1';
+const BALANCE_VARIATIONS = ['centroid', 'pole'];
 const CUT_HANDLE_PAD = 22;
 
 const BALANCE_PERFECT_THRESHOLD = 5;

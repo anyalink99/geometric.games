@@ -56,8 +56,8 @@ function recordInscribeScore(variation, score) {
 
 function renderInscribeStats(els, variation) {
   const b = inscribeStats[variation] || { attempts: 0, perfect: 0, sumScore: 0, bestScore: -Infinity };
-  els.sqAttempts.textContent = b.attempts;
-  els.sqBest.textContent = b.bestScore === -Infinity ? '—' : b.bestScore.toFixed(1) + '%';
-  els.sqAvg.textContent = b.attempts ? (b.sumScore / b.attempts).toFixed(1) + '%' : '—';
-  els.sqPerfect.textContent = b.perfect;
+  els.inAttempts.textContent = b.attempts;
+  els.inBest.textContent = b.bestScore === -Infinity ? '—' : b.bestScore.toFixed(1) + '%';
+  els.inAvg.textContent = b.attempts ? (b.sumScore / b.attempts).toFixed(1) + '%' : '—';
+  els.inPerfect.textContent = b.perfect;
 }

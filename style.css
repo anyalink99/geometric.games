@@ -60,8 +60,8 @@ body {
 
 .hit-pad { fill: transparent; cursor: crosshair; }
 .stage, .stage svg, #board { overflow: visible; }
-#shape-layer, #mass-pole-layer, #mass-point-layer, #mass-hover-layer,
-#mass-ideal-layer, #cut-layer, #cut-lines-layer, #cut-points-layer,
+#shape-layer, #pole-layer, #centroid-point-layer, #balance-hover-layer,
+#centroid-ideal-layer, #cut-layer, #cut-lines-layer, #cut-points-layer,
 #inscribe-ideal-layer, #inscribe-lines-layer, #inscribe-points-layer,
 #inscribe-hover-layer, #label-layer { overflow: visible; }
 
@@ -245,11 +245,11 @@ body.modals-open::before { opacity: 1; }
 
 /* ---- inscribe mode ---- */
 body[data-mode="cut"]      .help-inscribe,
-body[data-mode="cut"]      .help-mass     { display: none; }
+body[data-mode="cut"]      .help-balance  { display: none; }
 body[data-mode="inscribe"] .help-cut,
-body[data-mode="inscribe"] .help-mass     { display: none; }
-body[data-mode="mass"]     .help-cut,
-body[data-mode="mass"]     .help-inscribe { display: none; }
+body[data-mode="inscribe"] .help-balance  { display: none; }
+body[data-mode="balance"]  .help-cut,
+body[data-mode="balance"]  .help-inscribe { display: none; }
 
 body[data-mode="cut"] .help-cut > div { display: none; }
 body[data-mode="cut"][data-cut-variation="half"]  .help-cut-half,
@@ -262,9 +262,9 @@ body[data-mode="inscribe"] .help-inscribe > div { display: none; }
 body[data-mode="inscribe"][data-inscribe-variation="square"]   .help-inscribe-square,
 body[data-mode="inscribe"][data-inscribe-variation="triangle"] .help-inscribe-triangle { display: block; }
 
-body[data-mode="mass"] .help-mass > div { display: none; }
-body[data-mode="mass"][data-mass-variation="centroid"] .help-mass-centroid,
-body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { display: block; }
+body[data-mode="balance"] .help-balance > div { display: none; }
+body[data-mode="balance"][data-balance-variation="centroid"] .help-balance-centroid,
+body[data-mode="balance"][data-balance-variation="pole"]     .help-balance-pole     { display: block; }
 
 .math-note {
   font-size: 0.82rem;
@@ -329,7 +329,7 @@ body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { dis
   display: flex; flex-direction: column; gap: 10px;
   margin: 6px 0 14px;
 }
-.mode-card, .var-card, .inscribe-var-card, .mass-var-card {
+.mode-card, .var-card, .inscribe-var-card, .balance-var-card {
   text-align: left;
   background: #2a232f;
   border: 1.5px solid #3a3340;
@@ -340,8 +340,8 @@ body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { dis
   transition: border-color 0.2s, transform 0.15s, background 0.2s;
   font-family: inherit;
 }
-.mode-card:hover, .var-card:hover, .inscribe-var-card:hover, .mass-var-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-.mode-card.active, .var-card.active, .inscribe-var-card.active, .mass-var-card.active {
+.mode-card:hover, .var-card:hover, .inscribe-var-card:hover, .balance-var-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.mode-card.active, .var-card.active, .inscribe-var-card.active, .balance-var-card.active {
   border-color: var(--accent);
   background: linear-gradient(180deg, #35233e 0%, #2a1f34 100%);
   box-shadow: 0 0 0 2px rgba(192,132,252,0.22);
@@ -352,9 +352,9 @@ body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { dis
 }
 .mode-desc { font-size: 0.88rem; color: #d1d5db; line-height: 1.35; }
 
-/* ---- mass mode ---- */
-.mass-guess { pointer-events: none; }
-.mg-halo {
+/* ---- balance mode ---- */
+.centroid-guess { pointer-events: none; }
+.centroid-halo {
   fill: var(--pink);
   fill-opacity: 0.15;
   stroke: var(--pink);
@@ -362,14 +362,14 @@ body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { dis
   stroke-opacity: 0.5;
   pointer-events: none;
 }
-.mg-dot {
+.centroid-dot {
   fill: white;
   stroke: var(--pink);
   stroke-width: 2.2;
   pointer-events: none;
   filter: drop-shadow(0 0 6px rgba(244,114,182,0.6));
 }
-.mg-hover {
+.centroid-hover {
   fill: var(--pink);
   fill-opacity: 0.75;
   stroke: white;
@@ -378,42 +378,42 @@ body[data-mode="mass"][data-mass-variation="balance"]  .help-mass-balance  { dis
   filter: drop-shadow(0 0 5px rgba(244,114,182,0.5));
 }
 
-.mass-reveal { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
-.mass-reveal.show { opacity: 1; }
+.centroid-reveal { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+.centroid-reveal.show { opacity: 1; }
 
-.mass-connector {
+.centroid-connector {
   fill: none;
   stroke: var(--good);
   stroke-width: 1.8;
   stroke-dasharray: 5 4;
   opacity: 0.75;
 }
-.mass-centroid-arm {
+.centroid-arm {
   stroke: var(--good);
   stroke-width: 2.4;
   stroke-linecap: round;
   filter: drop-shadow(0 0 5px rgba(74,222,128,0.6));
 }
-.mass-centroid-ring {
+.centroid-ring {
   fill: none;
   stroke: var(--good);
   stroke-width: 2;
   filter: drop-shadow(0 0 6px rgba(74,222,128,0.7));
 }
 
-.balance-pole { pointer-events: none; }
-.bp-shaft {
+.pole-group { pointer-events: none; }
+.pole-shaft {
   fill: var(--accent);
   opacity: 0.92;
   filter: drop-shadow(0 0 6px rgba(192,132,252,0.55));
 }
-.bp-tip {
+.pole-tip {
   fill: white;
   stroke: var(--accent);
   stroke-width: 2;
   filter: drop-shadow(0 0 5px rgba(192,132,252,0.65));
 }
-.bp-hover {
+.pole-hover {
   stroke: var(--pink);
   stroke-width: 2;
   stroke-dasharray: 4 4;

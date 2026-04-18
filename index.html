@@ -17,7 +17,7 @@
       path = window.location.pathname;
     }
     var parts = path.split('/').filter(Boolean);
-    var modes = { cut: 1, inscribe: 1, mass: 1, square: 1 };
+    var modes = { cut: 1, inscribe: 1, balance: 1 };
     if (parts.length >= 2 && modes[parts[parts.length - 2]]) {
       parts = parts.slice(0, -2);
     } else if (parts.length >= 1 && modes[parts[parts.length - 1]]) {
@@ -45,9 +45,9 @@
   </div>
 
   <div class="stage">
-    <svg id="board" viewBox="0 -80 400 560" preserveAspectRatio="xMidYMid meet">
+    <svg id="board" viewBox="-60 -80 520 560" preserveAspectRatio="xMidYMid meet">
       <rect class="hit-pad" id="hit-pad" x="0" y="-80" width="400" height="560"/>
-      <g id="mass-pole-layer"></g>
+      <g id="pole-layer"></g>
       <g id="shape-layer"></g>
       <g id="cut-layer"></g>
       <g id="cut-lines-layer"></g>
@@ -56,9 +56,9 @@
       <g id="inscribe-lines-layer"></g>
       <g id="inscribe-points-layer"></g>
       <g id="inscribe-hover-layer"></g>
-      <g id="mass-ideal-layer"></g>
-      <g id="mass-point-layer"></g>
-      <g id="mass-hover-layer"></g>
+      <g id="centroid-ideal-layer"></g>
+      <g id="centroid-point-layer"></g>
+      <g id="balance-hover-layer"></g>
       <g id="label-layer"></g>
       <line id="cut-preview" class="cut-line preview" style="display:none"/>
     </svg>
@@ -139,8 +139,8 @@
           <p class="math-note"><b>Math:</b> every Jordan curve contains inscribed equilateral triangles — proven by Nielsen &amp; Wright (1990) and others. Unlike Toeplitz's square, the triangle case is fully settled.</p>
         </div>
       </div>
-      <div class="help-mass">
-        <div class="help-mass-centroid">
+      <div class="help-balance">
+        <div class="help-balance-centroid">
           <p>Find the <b>center of mass</b> of the shape — tap anywhere to place your guess.</p>
           <ul>
             <li>Shapes with holes shift the center of mass</li>
@@ -149,12 +149,11 @@
           </ul>
           <p class="math-note"><b>Math:</b> the centroid doesn't have to lie <i>inside</i> the shape — for an annulus it sits at the empty center. Non-convex outlines and holes are where intuition breaks.</p>
         </div>
-        <div class="help-mass-balance">
-          <p>Slide a <b>pole</b> under the shape so it <b>balances</b>. Miss by more than 5 and the shape tips over.</p>
+        <div class="help-balance-pole">
+          <p>Slide a <b>pole</b> under the shape so it <b>balances</b>.</p>
           <ul>
             <li>Tap anywhere to place the pole's X position</li>
             <li>Drag to fine-tune, then press <b>Confirm</b></li>
-            <li>Gravity punishes imbalance — the bigger the miss, the faster it falls</li>
           </ul>
           <p class="math-note"><b>Math:</b> only the horizontal offset between the pole and the centroid's X matters for tipping — it's an inverted pendulum whose torque is <i>m·g·Δx</i>.</p>
         </div>
@@ -174,16 +173,16 @@
         <p>Perfect cuts (&lt;0.5%): <b id="s-perfect">0</b></p>
       </div>
       <div id="stats-inscribe-section">
-        <p>Rounds played: <b id="sq-attempts">0</b></p>
-        <p>Best score: <b id="sq-best">—</b></p>
-        <p>Average score: <b id="sq-avg">—</b></p>
-        <p>Perfect (&gt;96%): <b id="sq-perfect">0</b></p>
+        <p>Rounds played: <b id="in-attempts">0</b></p>
+        <p>Best score: <b id="in-best">—</b></p>
+        <p>Average score: <b id="in-avg">—</b></p>
+        <p>Perfect (&gt;96%): <b id="in-perfect">0</b></p>
       </div>
-      <div id="stats-mass-section">
-        <p>Shapes played: <b id="ms-attempts">0</b></p>
-        <p>Best off by: <b id="ms-best">—</b></p>
-        <p>Average off by: <b id="ms-avg">—</b></p>
-        <p>Perfect (&le;5): <b id="ms-perfect">0</b></p>
+      <div id="stats-balance-section">
+        <p>Shapes played: <b id="bl-attempts">0</b></p>
+        <p>Best off by: <b id="bl-best">—</b></p>
+        <p>Average off by: <b id="bl-avg">—</b></p>
+        <p>Perfect (&le;5): <b id="bl-perfect">0</b></p>
       </div>
       <div class="close-row">
         <button class="btn secondary" id="reset-stats">Reset</button>
@@ -203,11 +202,11 @@
         </button>
         <button class="mode-card" data-mode="inscribe">
           <div class="mode-title">Inscribe</div>
-          <div class="mode-desc">Align the shape.</div>
+          <div class="mode-desc">Spot the vertices.</div>
         </button>
-        <button class="mode-card" data-mode="mass">
-          <div class="mode-title">Center of Mass</div>
-          <div class="mode-desc">Balance the shape.</div>
+        <button class="mode-card" data-mode="balance">
+          <div class="mode-title">Balance</div>
+          <div class="mode-desc">Pin the pivot.</div>
         </button>
       </div>
       <div class="close-row">
@@ -253,14 +252,14 @@
           <div class="mode-desc">Three points with equal sides and 60° angles.</div>
         </button>
       </div>
-      <div class="mode-picker" id="mass-var-picker">
-        <button class="mass-var-card" data-massvar="centroid">
+      <div class="mode-picker" id="balance-var-picker">
+        <button class="balance-var-card" data-balancevar="centroid">
           <div class="mode-title">Centroid</div>
           <div class="mode-desc">Tap the board where you think the center of mass is.</div>
         </button>
-        <button class="mass-var-card" data-massvar="balance">
+        <button class="balance-var-card" data-balancevar="pole">
           <div class="mode-title">Pole Balance</div>
-          <div class="mode-desc">Slide a pole under the shape so it doesn't tip. Miss by &gt;5 and physics takes over.</div>
+          <div class="mode-desc">Slide a pole under the shape so it doesn't tip.</div>
         </button>
       </div>
       <div class="close-row"><button class="btn" id="close-variations">Close</button></div>
@@ -283,11 +282,11 @@
 <script src="js/modes/inscribe/inscribe.js"></script>
 <script src="js/modes/inscribe/input.js"></script>
 <script src="js/modes/inscribe/stats.js"></script>
-<script src="js/modes/mass/centroid.js"></script>
-<script src="js/modes/mass/balance.js"></script>
-<script src="js/modes/mass/mass.js"></script>
-<script src="js/modes/mass/input.js"></script>
-<script src="js/modes/mass/stats.js"></script>
+<script src="js/modes/balance/centroid.js"></script>
+<script src="js/modes/balance/pole.js"></script>
+<script src="js/modes/balance/balance.js"></script>
+<script src="js/modes/balance/input.js"></script>
+<script src="js/modes/balance/stats.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>

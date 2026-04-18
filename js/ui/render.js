@@ -13,10 +13,10 @@ const dom = {
   inscribePoints: document.getElementById('inscribe-points-layer'),
   inscribeHover: document.getElementById('inscribe-hover-layer'),
   inscribeIdeal: document.getElementById('inscribe-ideal-layer'),
-  massPoint: document.getElementById('mass-point-layer'),
-  massHover: document.getElementById('mass-hover-layer'),
-  massIdeal: document.getElementById('mass-ideal-layer'),
-  massPole: document.getElementById('mass-pole-layer'),
+  centroidPoint: document.getElementById('centroid-point-layer'),
+  balanceHover: document.getElementById('balance-hover-layer'),
+  centroidIdeal: document.getElementById('centroid-ideal-layer'),
+  poleLayer: document.getElementById('pole-layer'),
 };
 
 function svgPoint(evt) {
@@ -39,10 +39,10 @@ function clearLayers() {
   dom.inscribePoints.innerHTML = '';
   dom.inscribeHover.innerHTML = '';
   dom.inscribeIdeal.innerHTML = '';
-  dom.massPoint.innerHTML = '';
-  dom.massHover.innerHTML = '';
-  dom.massIdeal.innerHTML = '';
-  dom.massPole.innerHTML = '';
+  dom.centroidPoint.innerHTML = '';
+  dom.balanceHover.innerHTML = '';
+  dom.centroidIdeal.innerHTML = '';
+  dom.poleLayer.innerHTML = '';
 }
 
 function makeShapeGroup(shape, groupClass) {
