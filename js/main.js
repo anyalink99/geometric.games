@@ -204,7 +204,7 @@ try {
 state.inscribeVariation = initialInscVar;
 document.body.dataset.inscribeVariation = initialInscVar;
 
-let initialBalanceVar = 'centroid';
+let initialBalanceVar = 'pole';
 try {
   const v = localStorage.getItem(BALANCE_VARIATION_KEY);
   if (v && BALANCE_VARIATIONS.includes(v)) initialBalanceVar = v;

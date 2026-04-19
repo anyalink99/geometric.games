@@ -33,9 +33,10 @@ body {
   position: relative;
 }
 
-.title {
+h1.title, .title {
   font-size: 2.25rem; font-weight: 900; letter-spacing: 2px;
   margin: 4px 0 6px;
+  line-height: 1.15;
 }
 .title .accent { color: var(--accent); }
 

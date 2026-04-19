@@ -3,7 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>geometric.games</title>
+<title>geometric.games — cut, inscribe & balance polygon puzzles</title>
+<meta name="description" content="Geometric browser puzzles: cut polygons in half, inscribe squares and triangles, balance shapes on a pole or find the centroid. Endless geometry challenges, no install.">
+<meta name="keywords" content="geometric games, geometry puzzle, polygon puzzle, cut polygon, cutle, inscribe square, inscribed square, equilateral triangle, balance puzzle, pole balance, centroid game, center of mass, endless geometry, browser game, math games, wordle-like geometry">
+<meta name="author" content="geometric.games">
+<meta name="theme-color" content="#111111">
+<meta property="og:type" content="website">
+<meta property="og:title" content="geometric.games — cut, inscribe & balance polygon puzzles">
+<meta property="og:description" content="Cut, inscribe, and balance polygons. Endless geometry puzzles in the browser.">
+<meta property="og:url" content="https://geometric.games/">
+<meta property="og:site_name" content="geometric.games">
+<meta name="twitter:title" content="geometric.games — cut, inscribe & balance polygon puzzles">
+<meta name="twitter:description" content="Cut, inscribe, and balance polygons. Endless geometry puzzles in the browser.">
+<meta property="og:image" content="https://geometric.games/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://geometric.games/og-image.png">
+<link rel="canonical" href="https://geometric.games/">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="mask-icon" href="favicon.svg" color="#c084fc">
+<link rel="manifest" href="manifest.webmanifest">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "geometric.games",
+  "url": "https://geometric.games/",
+  "description": "Cut, inscribe, and balance polygons. Endless geometry puzzles in the browser.",
+  "inLanguage": "en",
+  "publisher": {
+    "@type": "Organization",
+    "name": "geometric.games",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://geometric.games/favicon.svg"
+    }
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "item": {
+        "@type": "Game",
+        "name": "Cut",
+        "url": "https://geometric.games/cut",
+        "description": "Cut a polygon into equal halves, target ratios, or through a constrained angle.",
+        "genre": "Puzzle",
+        "applicationCategory": "Game"
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "item": {
+        "@type": "Game",
+        "name": "Inscribe",
+        "url": "https://geometric.games/inscribe",
+        "description": "Inscribe a square or equilateral triangle into a polygon.",
+        "genre": "Puzzle",
+        "applicationCategory": "Game"
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "item": {
+        "@type": "Game",
+        "name": "Balance",
+        "url": "https://geometric.games/balance",
+        "description": "Balance a polygon on a pole, or find its centroid.",
+        "genre": "Puzzle",
+        "applicationCategory": "Game"
+      }
+    }
+  ]
+}
+</script>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -44,7 +130,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <div class="app">
-  <div class="title">GEOMETRIC<span class="accent">.GAMES</span></div>
+  <h1 class="title">GEOMETRIC<span class="accent">.GAMES</span></h1>
 
   <div class="top-icons">
     <button id="help-btn" title="How to play" aria-label="Help">
@@ -264,13 +350,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
       </div>
       <div class="mode-picker" id="balance-var-picker">
-        <button class="balance-var-card" data-balancevar="centroid">
-          <div class="mode-title">Centroid</div>
-          <div class="mode-desc">Tap the board where you think the center of mass is.</div>
-        </button>
         <button class="balance-var-card" data-balancevar="pole">
           <div class="mode-title">Pole Balance</div>
           <div class="mode-desc">Slide a pole under the shape so it doesn't tip.</div>
+        </button>
+        <button class="balance-var-card" data-balancevar="centroid">
+          <div class="mode-title">Centroid</div>
+          <div class="mode-desc">Tap the board where you think the center of mass is.</div>
         </button>
       </div>
       <div class="close-row"><button class="btn" id="close-variations">Close</button></div>

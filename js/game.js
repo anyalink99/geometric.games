@@ -2,14 +2,14 @@ const state = {
   mode: 'cut',
   cutVariation: 'half',
   inscribeVariation: 'square',
-  balanceVariation: 'centroid',
+  balanceVariation: 'pole',
   shape: { outer: [], holes: [] },
   locked: false,
   hash: null,
 };
 
 function balanceVariation() {
-  return state.balanceVariation || 'centroid';
+  return state.balanceVariation || 'pole';
 }
 
 function updateActionButton() {

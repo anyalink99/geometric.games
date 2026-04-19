@@ -37,15 +37,52 @@ function buildRouteUrl(mode, hash) {
   return p + window.location.search;
 }
 
+const MODE_META = {
+  cut: {
+    title: 'Cut — geometric.games',
+    desc: 'Slice polygons in half, to a target ratio, into quads or tris, or along a constrained angle.',
+  },
+  inscribe: {
+    title: 'Inscribe — geometric.games',
+    desc: 'Inscribe a square or equilateral triangle into a polygon. Endless geometry puzzles.',
+  },
+  balance: {
+    title: 'Balance — geometric.games',
+    desc: 'Balance a polygon on a pole or find its centroid. Physics-driven geometry puzzles.',
+  },
+};
+
+function updateMeta(mode) {
+  const m = MODE_META[mode];
+  if (!m) return;
+  document.title = m.title;
+  let desc = document.querySelector('meta[name="description"]');
+  if (desc) desc.setAttribute('content', m.desc);
+  let ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', m.title);
+  let ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc) ogDesc.setAttribute('content', m.desc);
+  let twTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twTitle) twTitle.setAttribute('content', m.title);
+  let twDesc = document.querySelector('meta[name="twitter:description"]');
+  if (twDesc) twDesc.setAttribute('content', m.desc);
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', 'https://geometric.games/' + mode);
+  let ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', 'https://geometric.games/' + mode);
+}
+
 function pushRoute(mode, hash) {
   const url = buildRouteUrl(mode, hash);
   const current = window.location.pathname + window.location.search;
   if (url !== current) {
     try { history.pushState({ mode, hash }, '', url); } catch (e) {}
   }
+  updateMeta(mode);
 }
 
 function replaceRoute(mode, hash) {
   const url = buildRouteUrl(mode, hash);
   try { history.replaceState({ mode, hash }, '', url); } catch (e) {}
+  updateMeta(mode);
 }

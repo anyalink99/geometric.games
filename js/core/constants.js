@@ -28,7 +28,7 @@ const CUT_VARIATIONS = ['half', 'ratio', 'quad', 'tri', 'angle'];
 const INSCRIBE_VARIATION_KEY = 'geometric.games.inscribe.variation.v1';
 const INSCRIBE_VARIATIONS = ['square', 'triangle'];
 const BALANCE_VARIATION_KEY = 'geometric.games.balance.variation.v1';
-const BALANCE_VARIATIONS = ['centroid', 'pole'];
+const BALANCE_VARIATIONS = ['pole', 'centroid'];
 const CUT_HANDLE_PAD = 22;
 
 const BALANCE_PERFECT_THRESHOLD = 5;
