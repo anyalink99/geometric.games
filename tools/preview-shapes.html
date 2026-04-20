@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shape Preview — pick for OG image</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  body { padding: 24px; overflow: auto; }
+  .preview-app { max-width: 1600px; margin: 0 auto; }
+  .preview-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin: 0 0 8px;
+  }
+  .preview-sub {
+    color: #aaa;
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+  }
+  .mode-section { margin-bottom: 36px; }
+  .mode-section h2 {
+    color: var(--accent);
+    letter-spacing: 2px;
+    font-size: 1rem;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  .tile {
+    background: var(--bg-outer);
+    border: 2px solid #3a3340;
+    border-radius: 10px;
+    padding: 8px;
+    cursor: pointer;
+    transition: transform 120ms, border-color 120ms;
+    position: relative;
+  }
+  .tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tile.picked {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(192,132,252,0.4);
+  }
+  .tile svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .tile-label {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #888;
+    pointer-events: none;
+  }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .toolbar button {
+    font-family: inherit;
+    font-weight: 700;
+    background: var(--accent-soft);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 0 var(--accent-deep);
+  }
+  .toolbar button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-deep); }
+  .picks-summary {
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: var(--bg-outer);
+    border: 1px solid #3a3340;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #ccc;
+    min-height: 22px;
+  }
+</style>
+</head>
+<body data-mode="cut">
+<div class="preview-app">
+  <h1 class="preview-title">SHAPE PREVIEW</h1>
+  <p class="preview-sub">10 shapes per mode, generated with each mode's real generator. Click a tile to pick it for the OG image; click again to unpick.</p>
+
+  <div class="toolbar">
+    <button id="regen">Regenerate all</button>
+    <button id="copy-seeds">Copy picked seeds</button>
+  </div>
+  <div class="picks-summary" id="picks">No picks yet.</div>
+
+  <div class="mode-section">
+    <h2>Cut — generateShape()</h2>
+    <div class="grid" id="grid-cut"></div>
+  </div>
+  <div class="mode-section">
+    <h2>Inscribe — generateShape() filtered (no holes)</h2>
+    <div class="grid" id="grid-inscribe"></div>
+  </div>
+  <div class="mode-section">
+    <h2>Balance — generateBalanceShape()</h2>
+    <div class="grid" id="grid-balance"></div>
+  </div>
+</div>
+
+<script src="../js/core/constants.js"></script>
+<script src="../js/core/random.js"></script>
+<script src="../js/core/seed.js"></script>
+<script src="../js/geometry/geometry.js"></script>
+<script src="../js/geometry/shapes.js"></script>
+<script>
+(function() {
+  const SVG_NS_L = 'http://www.w3.org/2000/svg';
+  const MODES = ['cut', 'inscribe', 'balance'];
+  const PER_MODE = 10;
+
+  function genForMode(mode) {
+    if (mode === 'inscribe') {
+      for (let i = 0; i < 40; i++) {
+        const s = generateShape();
+        if (!s.holes || s.holes.length === 0) return s;
+      }
+      const s = generateShape();
+      return { outer: s.outer, holes: [] };
+    }
+    if (mode === 'balance') return generateBalanceShape();
+    return generateShape();
+  }
+
+  function makeTile(mode, index, seed) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.mode = mode;
+    tile.dataset.index = index;
+    tile.dataset.seed = seed;
+
+    const label = document.createElement('div');
+    label.className = 'tile-label';
+    label.textContent = seed;
+    tile.appendChild(label);
+
+    const svg = document.createElementNS(SVG_NS_L, 'svg');
+    svg.setAttribute('viewBox', '20 20 360 360');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    const shape = withSeed(seedFromString(seed), () => genForMode(mode));
+
+    const fill = document.createElementNS(SVG_NS_L, 'path');
+    fill.setAttribute('class', 'shape-fill');
+    fill.setAttribute('d', shapeToPath(shape));
+    svg.appendChild(fill);
+
+    const outline = document.createElementNS(SVG_NS_L, 'path');
+    outline.setAttribute('class', 'shape-outline');
+    let d = pointsToPath(shape.outer);
+    if (shape.holes && shape.holes.length) {
+      for (const h of shape.holes) if (h.length) d += ' ' + pointsToPath(h);
+    }
+    outline.setAttribute('d', d);
+    svg.appendChild(outline);
+
+    tile.appendChild(svg);
+    return tile;
+  }
+
+  const picks = { cut: null, inscribe: null, balance: null };
+
+  function updatePicksSummary() {
+    const p = document.getElementById('picks');
+    const parts = [];
+    for (const m of MODES) {
+      if (picks[m]) parts.push(`${m}: ${picks[m]}`);
+    }
+    p.textContent = parts.length ? parts.join('  |  ') : 'No picks yet.';
+  }
+
+  function render() {
+    for (const mode of MODES) {
+      const grid = document.getElementById('grid-' + mode);
+      grid.innerHTML = '';
+      for (let i = 0; i < PER_MODE; i++) {
+        const seed = mode + '-' + Date.now().toString(36) + '-' + i + '-' + Math.random().toString(36).slice(2, 8);
+        const tile = makeTile(mode, i, seed);
+        tile.addEventListener('click', () => {
+          const prev = grid.querySelector('.tile.picked');
+          if (prev && prev !== tile) prev.classList.remove('picked');
+          tile.classList.toggle('picked');
+          picks[mode] = tile.classList.contains('picked') ? seed : null;
+          updatePicksSummary();
+        });
+        grid.appendChild(tile);
+      }
+    }
+    picks.cut = picks.inscribe = picks.balance = null;
+    updatePicksSummary();
+  }
+
+  document.getElementById('regen').addEventListener('click', render);
+  document.getElementById('copy-seeds').addEventListener('click', () => {
+    const text = MODES.map(m => `${m}: ${picks[m] || '(none)'}`).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-seeds');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1200);
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

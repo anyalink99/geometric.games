@@ -37,8 +37,8 @@ const GAME_PAGES = [
     canonicalPath: '/',
     mode: 'cut',
     variation: 'half',
-    title: 'geometric.games — cut a polygon in half',
-    description: 'Slice irregular polygons into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free.',
+    title: 'geometric.games — cut a shape in half',
+    description: 'Slice irregular shapes into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free.',
   },
   {
     // /cut/ is an alias for /. Same content, canonical points to /,
@@ -48,31 +48,31 @@ const GAME_PAGES = [
     mode: 'cut',
     variation: 'half',
     isAlias: true,
-    title: 'geometric.games — cut a polygon in half',
-    description: 'Slice irregular polygons into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free.',
+    title: 'geometric.games — cut a shape in half',
+    description: 'Slice irregular shapes into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free.',
   },
   {
     outPath: 'cut/ratio/index.html',
     canonicalPath: '/cut/ratio/',
     mode: 'cut',
     variation: 'ratio',
-    title: 'Target ratio cut — slice a polygon to an exact ratio | geometric.games',
-    description: 'Each round gives a random target ratio from 5/95 to 50/50. Cut the polygon with one line so the smaller piece matches the percentage.',
+    title: 'Target ratio cut — slice a shape to an exact ratio | geometric.games',
+    description: 'Each round gives a random target ratio from 5/95 to 50/50. Cut the shape with one line so the smaller piece matches the percentage.',
   },
   {
     outPath: 'cut/quad/index.html',
     canonicalPath: '/cut/quad/',
     mode: 'cut',
     variation: 'quad',
-    title: 'Quad cut — split a polygon into 4 equal pieces | geometric.games',
-    description: 'Place two cuts that cross inside the polygon to split it into four equal quarters by area. Based on the Courant–Robbins theorem.',
+    title: 'Quad cut — split a shape into 4 equal pieces | geometric.games',
+    description: 'Place two cuts that cross inside the shape to split it into four equal quarters by area. Based on the Courant–Robbins theorem.',
   },
   {
     outPath: 'cut/tri/index.html',
     canonicalPath: '/cut/tri/',
     mode: 'cut',
     variation: 'tri',
-    title: 'Tri cut — divide a polygon into 3 equal pieces | geometric.games',
+    title: 'Tri cut — divide a shape into 3 equal pieces | geometric.games',
     description: 'Two straight cuts, three equal pieces by area — but the second cut must leave one piece whole. An IVT-driven geometry puzzle.',
   },
   {
@@ -80,8 +80,8 @@ const GAME_PAGES = [
     canonicalPath: '/cut/angle/',
     mode: 'cut',
     variation: 'angle',
-    title: 'Fixed-angle polygon bisector — find the 50/50 slide | geometric.games',
-    description: 'The cut direction is locked. Slide the line perpendicular to itself to find the unique parallel line that bisects the polygon by area.',
+    title: 'Fixed-angle area bisector — find the 50/50 slide | geometric.games',
+    description: 'The cut direction is locked. Slide the line perpendicular to itself to find the unique parallel line that bisects the shape by area.',
   },
   {
     outPath: 'inscribe/index.html',
@@ -89,7 +89,7 @@ const GAME_PAGES = [
     mode: 'inscribe',
     variation: 'square',
     title: 'Inscribed square puzzle — play the Toeplitz problem | geometric.games',
-    description: 'Drop four points on a polygon’s outline to form a perfect square. A playable take on the 110-year-old Inscribed Square Problem (Toeplitz, 1911).',
+    description: 'Drop four points on a shape’s outline to form a perfect square. A playable take on the 110-year-old Inscribed Square Problem (Toeplitz, 1911).',
   },
   {
     outPath: 'inscribe/triangle/index.html',
@@ -97,23 +97,23 @@ const GAME_PAGES = [
     mode: 'inscribe',
     variation: 'triangle',
     title: 'Inscribed equilateral triangle puzzle | geometric.games',
-    description: 'Place three points on a polygon’s outline so they form an equilateral triangle — the solved sibling of the Toeplitz problem.',
+    description: 'Place three points on a shape’s outline so they form an equilateral triangle — the solved sibling of the Toeplitz problem.',
   },
   {
     outPath: 'balance/index.html',
     canonicalPath: '/balance/',
     mode: 'balance',
     variation: 'pole',
-    title: 'Pole balance puzzle — slide the pivot under a polygon | geometric.games',
-    description: 'Slide a pole under an irregular polygon so it doesn’t tip. Scored by how close the pivot is to the polygon’s true centroid.',
+    title: 'Pole balance puzzle — slide the pivot under a shape | geometric.games',
+    description: 'Slide a pole under an irregular shape so it doesn’t tip. Scored by how close the pivot is to the shape’s true centroid.',
   },
   {
     outPath: 'balance/centroid/index.html',
     canonicalPath: '/balance/centroid/',
     mode: 'balance',
     variation: 'centroid',
-    title: 'Centroid guess — find the center of mass of a polygon | geometric.games',
-    description: 'Tap where you think the polygon’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely.',
+    title: 'Centroid guess — find the center of mass of a shape | geometric.games',
+    description: 'Tap where you think the shape’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely.',
   },
 ];
 
@@ -139,8 +139,8 @@ const BLOG_POSTS = [
   {
     slug: 'cutting-polygons-in-half',
     date: '2026-04-20',
-    title: 'Cutting polygons in half: why a perfect bisector always exists',
-    description: 'The Intermediate Value Theorem guarantees that every polygon has a 50/50 area bisector in every direction. A short tour of why.',
+    title: 'Cutting shapes in half: why a perfect bisector always exists',
+    description: 'The Intermediate Value Theorem guarantees that every bounded planar region has a 50/50 area bisector in every direction. A short tour of why.',
     playTitle: 'Play: Cut in Half',
     playPath: '/',
     body: postCuttingInHalf(),
@@ -183,10 +183,10 @@ const BLOG_POSTS = [
 
 function postCuttingInHalf() {
   return `
-  <h2>Slice any polygon into two equal halves</h2>
+  <h2>Slice any shape into two equal halves</h2>
   <p>
-    Draw a single straight line that fully crosses an irregular polygon and splits it into two pieces
-    of equal area. The shape is generated fresh every round from a seeded random polygon — sometimes
+    Draw a single straight line that fully crosses an irregular shape and splits it into two pieces
+    of equal area. A fresh shape is generated every round from a seeded random outline — sometimes
     smooth and convex, sometimes jagged with inward notches and holes. Your cut is scored by how far
     the smaller piece is from exactly <b>50%</b>. Drag the endpoints after placing the line to
     fine-tune, then confirm.
@@ -195,10 +195,10 @@ function postCuttingInHalf() {
   <h2>The math: why a perfect half always exists</h2>
   <p>
     By the <b>Intermediate Value Theorem</b>, every bounded region has a 50/50 bisector in
-    <i>every</i> direction. Sweep a line of a fixed angle from one side of the polygon to the other:
+    <i>every</i> direction. Sweep a line of a fixed angle from one side of the shape to the other:
     one extreme has 0% of the area to its left, the other has 100%. The area-to-the-left function is
     continuous, so it must pass through exactly 50% somewhere in between. Change the angle and you
-    get a different bisector — so every polygon has infinitely many perfect half-cuts, and the
+    get a different bisector — so every shape has infinitely many perfect half-cuts, and the
     puzzle is always solvable.
   </p>
   <p>
@@ -228,17 +228,17 @@ function postCuttingInHalf() {
   </ul>
   <p>
     Or switch mode entirely: <a href="/inscribe/">inscribe a square</a> (the unsolved Toeplitz problem)
-    or <a href="/balance/">balance the polygon on a pole</a>.
+    or <a href="/balance/">balance the shape on a pole</a>.
   </p>
   `;
 }
 
 function postCourantRobbins() {
   return `
-  <h2>Split a polygon into four equal pieces</h2>
+  <h2>Split a shape into four equal pieces</h2>
   <p>
-    Draw <b>two straight cuts</b> that each fully cross the polygon and intersect <i>inside</i> the
-    shape. Together they carve the polygon into four pieces, and you’re scored on how close those
+    Draw <b>two straight cuts</b> that each fully cross the shape and intersect <i>inside</i> it.
+    Together they carve the shape into four pieces, and you’re scored on how close those
     pieces are to one quarter of the total area each. Drag either line’s endpoints to adjust, then
     confirm.
   </p>
@@ -249,12 +249,12 @@ function postCourantRobbins() {
     region can be divided into <b>four equal pieces by two perpendicular straight lines</b>. The
     proof is beautiful: for every angle θ, there’s an area-bisector in that direction (from the
     Intermediate Value Theorem). Fix one bisector, then rotate a second bisector perpendicular to it
-    by 90° — by continuity, somewhere during the rotation the two bisectors cut the polygon into
+    by 90° — by continuity, somewhere during the rotation the two bisectors cut the region into
     four pieces that are all equal.
   </p>
   <p>
     The puzzle doesn’t force perpendicularity — any two crossing bisectors work as long as each
-    one splits the polygon in half on its own <i>and</i> each also splits the other’s two halves
+    one splits the shape in half on its own <i>and</i> each also splits the other’s two halves
     in half. That’s a tighter constraint than it looks, and it’s what makes this variation feel so
     different from the simple <a href="/">half cut</a>.
   </p>
@@ -279,9 +279,9 @@ function postCourantRobbins() {
 
 function postInscribedSquare() {
   return `
-  <h2>Inscribe a square inside a polygon</h2>
+  <h2>Inscribe a square inside a shape</h2>
   <p>
-    Place <b>four points</b> on the polygon’s outline so they form a square. As you move your
+    Place <b>four points</b> on the shape’s outline so they form a square. As you move your
     cursor, the nearest outline point follows it — tap to drop a vertex. After four drops the
     quadrilateral is scored: closer to a perfect square (equal sides, 90° angles) means a higher
     score. You can drag any placed point afterwards to refine.
@@ -294,20 +294,21 @@ function postInscribedSquare() {
     <i>probably yes</i> — but it’s still <b>one of the oldest open problems in geometry</b>.
   </p>
   <p>
-    The problem is settled for nice classes of curves: polygons, convex curves, smooth curves, and
-    curves with bounded curvature all provably have an inscribed square. Recent work by Greene &amp;
-    Lobb (2020) settled the problem for smooth Jordan curves by connecting it to symplectic
-    geometry. But for <i>arbitrary</i> Jordan curves — including pathological fractal ones —
-    existence is still unproved.
+    The problem is settled for nice classes of curves: polygons, convex curves, smooth curves,
+    piecewise-smooth curves, and curves with bounded curvature all provably have an inscribed
+    square. Recent work by Greene &amp; Lobb (2020) settled the problem for smooth Jordan curves by
+    connecting it to symplectic geometry. But for <i>arbitrary</i> Jordan curves — including
+    pathological fractal ones — existence is still unproved.
   </p>
   <p>
-    On this page every generated shape is a polygon, so a perfect inscribed square is guaranteed to
-    exist. Your job is to find one by eye.
+    On this page every generated shape is piecewise-smooth — a mix of straight segments, circular
+    arcs, and Bezier curves. That’s well within the classes where the problem is proven, so a
+    perfect inscribed square always exists on these shapes. Your job is to find one by eye.
   </p>
 
   <h2>Tips for spotting an inscribed square</h2>
   <ul>
-    <li>Start with a diameter: pick two points on roughly opposite sides of the polygon — they’re candidates for the square’s diagonal.</li>
+    <li>Start with a diameter: pick two points on roughly opposite sides of the shape — they’re candidates for the square’s diagonal.</li>
     <li>The two other vertices must sit on a line perpendicular to that diagonal, with the same length.</li>
     <li>Convex regions usually have several inscribed squares; concave shapes sometimes have just one obvious one.</li>
     <li>If three vertices already look good but the fourth is hard to place, adjust vertex two — the constraint often means the whole square has to rotate slightly.</li>
@@ -316,8 +317,8 @@ function postInscribedSquare() {
   <h2>Related</h2>
   <ul>
     <li><a href="/inscribe/triangle/">Inscribed Equilateral Triangle</a> — the solved sibling of the Toeplitz problem.</li>
-    <li><a href="/">Cut</a> — slice polygons by area instead of placing vertices.</li>
-    <li><a href="/balance/">Balance</a> — find where the polygon’s centroid sits.</li>
+    <li><a href="/">Cut</a> — slice shapes by area instead of placing vertices.</li>
+    <li><a href="/balance/">Balance</a> — find where the shape’s centroid sits.</li>
   </ul>
   `;
 }
@@ -326,7 +327,7 @@ function postInscribedTriangle() {
   return `
   <h2>Inscribe an equilateral triangle</h2>
   <p>
-    Drop <b>three points</b> on the polygon’s outline so they form an equilateral triangle — all
+    Drop <b>three points</b> on the shape’s outline so they form an equilateral triangle — all
     three sides the same length, all three angles 60°. Same placement mechanics as the
     <a href="/inscribe/">square variation</a>: the nearest boundary point follows your cursor, tap
     to drop, drag to refine, confirm to score.
@@ -343,7 +344,7 @@ function postInscribedTriangle() {
     The sketch: pick any point <i>A</i> on the curve. For every direction θ you can construct a
     candidate equilateral triangle with <i>A</i> as one vertex and a second vertex lying on the
     curve at distance <i>r(θ)</i> in direction θ. As θ rotates, the third vertex traces a continuous
-    curve that must intersect the original polygon — and at every intersection, you get an
+    curve that must intersect the original outline — and at every intersection, you get an
     inscribed equilateral triangle.
   </p>
 
@@ -351,14 +352,14 @@ function postInscribedTriangle() {
   <ul>
     <li>Start with two points a reasonable distance apart — they define one side of the triangle.</li>
     <li>The third vertex is the apex of an equilateral triangle built on that side. There are two possible apex positions (one on each side). Pick the one that actually lands on the outline.</li>
-    <li>Long narrow polygons have smaller inscribed equilateral triangles than you’d expect.</li>
-    <li>If one vertex is locked on a sharp corner of the polygon, try a second vertex on the opposite long edge — triangles often snap nicely that way.</li>
+    <li>Long narrow shapes have smaller inscribed equilateral triangles than you’d expect.</li>
+    <li>If one vertex is locked on a sharp corner of the shape, try a second vertex on the opposite long edge — triangles often snap nicely that way.</li>
   </ul>
 
   <h2>Related</h2>
   <ul>
     <li><a href="/inscribe/">Inscribed Square</a> — the still-open Toeplitz problem.</li>
-    <li><a href="/">Cut a polygon in half</a> — the IVT-driven classic.</li>
+    <li><a href="/">Cut a shape in half</a> — the IVT-driven classic.</li>
     <li><a href="/balance/">Balance puzzles</a> — centroid and pole physics.</li>
   </ul>
   `;
@@ -366,9 +367,9 @@ function postInscribedTriangle() {
 
 function postCentroidHoles() {
   return `
-  <h2>Find the polygon’s center of mass</h2>
+  <h2>Find the shape’s center of mass</h2>
   <p>
-    Tap anywhere on the board to place your guess for the polygon’s centroid. Drag to refine, then
+    Tap anywhere on the board to place your guess for the shape’s centroid. Drag to refine, then
     confirm. The puzzle scores you on the distance between your guess and the true centroid — the
     closer, the higher the score. Shapes with holes, concave notches, and long thin limbs are the
     ones where intuition breaks.
@@ -377,8 +378,9 @@ function postCentroidHoles() {
   <h2>The math: the centroid formula</h2>
   <p>
     For a uniformly dense planar region, the <b>centroid</b> is the area-weighted average of all
-    points inside the shape. For polygons it has a closed-form formula as a sum over the vertices,
-    but the qualitative facts are more useful while playing:
+    points inside the shape. For polygons it has a closed-form formula as a sum over the vertices —
+    and since the curved shapes here are sampled into dense polylines before the math runs, the
+    same formula works in practice. But the qualitative facts are more useful while playing:
   </p>
   <ul>
     <li>The centroid is invariant under translation and rotation.</li>
@@ -627,7 +629,7 @@ const HELP_MODAL = `<div class="modal-back" id="help-modal">
             <li>Tap / click to drop — drag points any time to adjust</li>
             <li>After four points, press <b>Confirm</b> to score</li>
           </ul>
-          <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons and smooth curves; for arbitrary Jordan curves it's still <i>open</i> after 110+ years. <a class="math-more" href="/blog/inscribed-square-problem/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons, smooth curves, and piecewise-smooth curves like the ones here; for arbitrary Jordan curves it's still <i>open</i> after 110+ years. <a class="math-more" href="/blog/inscribed-square-problem/">Read more →</a></p>
         </div>
         <div class="help-inscribe-triangle">
           <p>Place <b>three points</b> on the outline to form an equilateral triangle.</p>

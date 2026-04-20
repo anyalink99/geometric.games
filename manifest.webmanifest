@@ -1,7 +1,7 @@
 {
   "name": "geometric.games",
   "short_name": "geometric.games",
-  "description": "Cut, inscribe, and balance polygons. Endless geometry puzzles in the browser.",
+  "description": "Cut, inscribe, and balance shapes. Endless geometry puzzles in the browser.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OG Image Builder</title>
+<style>
+  body {
+    margin: 0;
+    padding: 32px;
+    background: #1a161d;
+    color: #e8e8ea;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  h1 { margin: 0 0 6px; letter-spacing: 1.5px; color: #c084fc; font-weight: 800; }
+  .sub { margin: 0 0 24px; color: #9a95a0; font-size: 14px; }
+  .row { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .card {
+    background: #2d2631;
+    border: 1px solid #3a3340;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .card h3 {
+    margin: 0 0 12px;
+    color: #c084fc;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .preview { display: block; border-radius: 6px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  .btn {
+    margin-top: 14px;
+    font-weight: 700;
+    background: #a855f7;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 0 #6b2ea0;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #6b2ea0; }
+  .seeds {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: #9a95a0;
+    margin: 12px 0 20px;
+  }
+  .seeds b { color: #c084fc; }
+</style>
+</head>
+<body>
+<h1>OG IMAGE BUILDER</h1>
+<p class="sub">Shapes generated from the three picked seeds. Click &ldquo;Download PNG&rdquo; for each variant.</p>
+
+<div class="seeds" id="seeds-line"></div>
+
+<div class="row">
+  <div class="card">
+    <h3>Landscape — 1200 &times; 630</h3>
+    <div id="landscape-mount"></div>
+    <button class="btn" id="dl-landscape">Download og-image.png</button>
+  </div>
+  <div class="card">
+    <h3>Square — 1200 &times; 1200</h3>
+    <div id="square-mount"></div>
+    <button class="btn" id="dl-square">Download og-image-square.png</button>
+  </div>
+</div>
+
+<script src="../js/core/constants.js"></script>
+<script src="../js/core/random.js"></script>
+<script src="../js/core/seed.js"></script>
+<script src="../js/geometry/geometry.js"></script>
+<script src="../js/geometry/shapes.js"></script>
+<script>
+(function() {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const SEEDS = {
+    cut:      'cut-mo6kgvvh-6-gm19nt',
+    inscribe: 'inscribe-mo6kgvvk-8-ni9h7a',
+    balance:  'balance-mo6kgvw1-6-azfjhu',
+  };
+
+  document.getElementById('seeds-line').innerHTML =
+    'Cut: <b>' + SEEDS.cut + '</b> &nbsp; Inscribe: <b>' + SEEDS.inscribe + '</b> &nbsp; Balance: <b>' + SEEDS.balance + '</b>';
+
+  function genForMode(mode) {
+    if (mode === 'inscribe') {
+      for (let i = 0; i < 40; i++) {
+        const s = generateShape();
+        if (!s.holes || s.holes.length === 0) return s;
+      }
+      const s = generateShape();
+      return { outer: s.outer, holes: [] };
+    }
+    if (mode === 'balance') return generateBalanceShape();
+    return generateShape();
+  }
+
+  const SHAPES = {};
+  for (const mode of Object.keys(SEEDS)) {
+    SHAPES[mode] = withSeed(seedFromString(SEEDS[mode]), () => genForMode(mode));
+  }
+
+  function bbox(pts) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+    }
+    return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+  }
+
+  // Decorations
+  function cutDecoration(shape) {
+    const b = bbox(shape.outer);
+    const y = b.cy + (b.maxY - b.minY) * 0.08;
+    const ang = -0.12;
+    const half = Math.max(b.maxX - b.minX, b.maxY - b.minY) * 0.65;
+    const dx = Math.cos(ang) * half;
+    const dy = Math.sin(ang) * half;
+    return { x1: b.cx - dx, y1: y - dy, x2: b.cx + dx, y2: y + dy };
+  }
+
+  function inscribeDecoration(shape) {
+    const b = bbox(shape.outer);
+    const side = Math.min(b.maxX - b.minX, b.maxY - b.minY) * 0.55;
+    const ang = 0.18;
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const corners = [
+      { x: -side / 2, y: -side / 2 },
+      { x:  side / 2, y: -side / 2 },
+      { x:  side / 2, y:  side / 2 },
+      { x: -side / 2, y:  side / 2 },
+    ].map(p => ({
+      x: b.cx + p.x * c - p.y * s,
+      y: b.cy + p.x * s + p.y * c,
+    }));
+    return corners;
+  }
+
+  function balanceDecoration(shape) {
+    const b = bbox(shape.outer);
+    const y = b.maxY + 18;
+    const w = (b.maxX - b.minX) * 1.05;
+    const pivotX = b.cx + (b.maxX - b.minX) * 0.08;
+    return {
+      line: { x1: b.cx - w / 2, y1: y, x2: b.cx + w / 2, y2: y },
+      pivot: { x: pivotX, y: y },
+    };
+  }
+
+  function pathForShape(shape) {
+    let d = pointsToPath(shape.outer);
+    if (shape.holes && shape.holes.length) {
+      for (const h of shape.holes) if (h.length) d += ' ' + pointsToPath(h);
+    }
+    return d;
+  }
+
+  // Build one shape tile as a group positioned within the container SVG
+  function shapeTile(mode, tx, ty, size) {
+    const shape = SHAPES[mode];
+    // Shape coord system: centered at (200,200), bbox roughly in [0,400].
+    // We want to fit the shape's own bbox tightly into the tile (size x size).
+    const b = bbox(shape.outer);
+    const shapeW = b.maxX - b.minX;
+    const shapeH = b.maxY - b.minY;
+    // Leave 20% margin for decorations
+    const padPx = size * 0.12;
+    const scale = Math.min((size - padPx * 2) / shapeW, (size - padPx * 2) / shapeH);
+    const offsetX = tx + size / 2 - b.cx * scale;
+    const offsetY = ty + size / 2 - b.cy * scale;
+
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('transform', `translate(${offsetX} ${offsetY}) scale(${scale})`);
+
+    const fill = document.createElementNS(SVG_NS, 'path');
+    fill.setAttribute('d', pathForShape(shape));
+    fill.setAttribute('fill', '#a855f7');
+    fill.setAttribute('fill-opacity', '0.85');
+    fill.setAttribute('fill-rule', 'evenodd');
+    fill.setAttribute('stroke', 'none');
+    g.appendChild(fill);
+
+    const outline = document.createElementNS(SVG_NS, 'path');
+    outline.setAttribute('d', pathForShape(shape));
+    outline.setAttribute('fill', 'none');
+    outline.setAttribute('stroke', '#c084fc');
+    outline.setAttribute('stroke-width', String(2.5 / scale));
+    outline.setAttribute('stroke-linejoin', 'round');
+    g.appendChild(outline);
+
+    // Mode-specific decoration
+    if (mode === 'cut') {
+      const d = cutDecoration(shape);
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', d.x1); line.setAttribute('y1', d.y1);
+      line.setAttribute('x2', d.x2); line.setAttribute('y2', d.y2);
+      line.setAttribute('stroke', '#c084fc');
+      line.setAttribute('stroke-width', String(3 / scale));
+      line.setAttribute('stroke-dasharray', `${10 / scale} ${8 / scale}`);
+      line.setAttribute('stroke-linecap', 'round');
+      g.appendChild(line);
+    } else if (mode === 'inscribe') {
+      const pts = inscribeDecoration(shape);
+      const sq = document.createElementNS(SVG_NS, 'path');
+      const pd = 'M ' + pts.map(p => `${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' L ') + ' Z';
+      sq.setAttribute('d', pd);
+      sq.setAttribute('fill', 'rgba(192,132,252,0.15)');
+      sq.setAttribute('stroke', '#c084fc');
+      sq.setAttribute('stroke-width', String(2.5 / scale));
+      sq.setAttribute('stroke-linejoin', 'round');
+      g.appendChild(sq);
+      for (const p of pts) {
+        const dot = document.createElementNS(SVG_NS, 'circle');
+        dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
+        dot.setAttribute('r', String(5 / scale));
+        dot.setAttribute('fill', '#c084fc');
+        g.appendChild(dot);
+      }
+    } else if (mode === 'balance') {
+      const d = balanceDecoration(shape);
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', d.line.x1); line.setAttribute('y1', d.line.y1);
+      line.setAttribute('x2', d.line.x2); line.setAttribute('y2', d.line.y2);
+      line.setAttribute('stroke', '#c084fc');
+      line.setAttribute('stroke-width', String(3 / scale));
+      line.setAttribute('stroke-linecap', 'round');
+      g.appendChild(line);
+      const tri = document.createElementNS(SVG_NS, 'path');
+      const tx2 = d.pivot.x, ty2 = d.pivot.y;
+      const tr = 12;
+      tri.setAttribute('d', `M ${tx2} ${ty2 - tr * 0.9} L ${tx2 + tr} ${ty2 + tr * 0.6} L ${tx2 - tr} ${ty2 + tr * 0.6} Z`);
+      tri.setAttribute('fill', '#c084fc');
+      g.appendChild(tri);
+    }
+
+    return g;
+  }
+
+  function buildSvg(W, H, layout) {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('xmlns', SVG_NS);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    // Background
+    const bg = document.createElementNS(SVG_NS, 'rect');
+    bg.setAttribute('width', W); bg.setAttribute('height', H);
+    bg.setAttribute('fill', '#1a161d');
+    svg.appendChild(bg);
+
+    // Soft vignette background via a subtle radial gradient
+    const defs = document.createElementNS(SVG_NS, 'defs');
+    defs.innerHTML =
+      `<radialGradient id="bggrad" cx="50%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#2d2631" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#1a161d" stop-opacity="1"/>
+      </radialGradient>`;
+    svg.appendChild(defs);
+    const bg2 = document.createElementNS(SVG_NS, 'rect');
+    bg2.setAttribute('width', W); bg2.setAttribute('height', H);
+    bg2.setAttribute('fill', 'url(#bggrad)');
+    svg.appendChild(bg2);
+
+    // Shape tiles
+    for (const t of layout.tiles) {
+      svg.appendChild(shapeTile(t.mode, t.x, t.y, t.size));
+    }
+
+    // Title "GEOMETRIC.GAMES"
+    const title = document.createElementNS(SVG_NS, 'text');
+    title.setAttribute('x', W / 2);
+    title.setAttribute('y', layout.titleY);
+    title.setAttribute('text-anchor', 'middle');
+    title.setAttribute('font-family', 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif');
+    title.setAttribute('font-weight', '900');
+    title.setAttribute('font-size', layout.titleSize);
+    title.setAttribute('letter-spacing', '3');
+    title.innerHTML =
+      `<tspan fill="#f6f3f8">GEOMETRIC</tspan><tspan fill="#c084fc">.GAMES</tspan>`;
+    svg.appendChild(title);
+
+    // Subtitle "cut · inscribe · balance"
+    const sub = document.createElementNS(SVG_NS, 'text');
+    sub.setAttribute('x', W / 2);
+    sub.setAttribute('y', layout.subY);
+    sub.setAttribute('text-anchor', 'middle');
+    sub.setAttribute('font-family', 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif');
+    sub.setAttribute('font-weight', '600');
+    sub.setAttribute('font-size', layout.subSize);
+    sub.setAttribute('letter-spacing', '2');
+    sub.setAttribute('fill', '#d8cde4');
+    sub.textContent = 'cut \u00b7 inscribe \u00b7 balance';
+    svg.appendChild(sub);
+
+    // Footer tagline
+    const foot = document.createElementNS(SVG_NS, 'text');
+    foot.setAttribute('x', W / 2);
+    foot.setAttribute('y', layout.footY);
+    foot.setAttribute('text-anchor', 'middle');
+    foot.setAttribute('font-family', 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif');
+    foot.setAttribute('font-weight', '500');
+    foot.setAttribute('font-size', layout.footSize);
+    foot.setAttribute('fill', '#9a95a0');
+    foot.textContent = 'endless geometry puzzles in the browser';
+    svg.appendChild(foot);
+
+    return svg;
+  }
+
+  // Landscape 1200x630
+  const landscapeLayout = {
+    tiles: [
+      { mode: 'cut',      x: 60,  y: 50, size: 320 },
+      { mode: 'inscribe', x: 440, y: 50, size: 320 },
+      { mode: 'balance',  x: 820, y: 50, size: 320 },
+    ],
+    titleY: 470, titleSize: 72,
+    subY:   524, subSize:   26,
+    footY:  582, footSize:  20,
+  };
+
+  // Square 1200x1200: tiles stacked tight in the middle, title below
+  const squareLayout = {
+    tiles: [
+      { mode: 'cut',      x: 60,  y: 280, size: 320 },
+      { mode: 'inscribe', x: 440, y: 280, size: 320 },
+      { mode: 'balance',  x: 820, y: 280, size: 320 },
+    ],
+    titleY: 740, titleSize: 80,
+    subY:   810, subSize:   30,
+    footY:  870, footSize:  22,
+  };
+
+  // Mount previews (scaled down)
+  function mountPreview(mountId, svg, previewWidth) {
+    const mount = document.getElementById(mountId);
+    svg.style.width = previewWidth + 'px';
+    svg.style.height = 'auto';
+    svg.classList.add('preview');
+    mount.appendChild(svg);
+  }
+
+  const landscapeSvg = buildSvg(1200, 630, landscapeLayout);
+  const squareSvg = buildSvg(1200, 1200, squareLayout);
+  mountPreview('landscape-mount', landscapeSvg, 640);
+  mountPreview('square-mount', squareSvg, 440);
+
+  // Rasterize SVG to PNG via canvas
+  function downloadSvgAsPng(svg, width, height, filename) {
+    const cloned = svg.cloneNode(true);
+    cloned.setAttribute('width', width);
+    cloned.setAttribute('height', height);
+    cloned.classList.remove('preview');
+    cloned.style.width = '';
+    cloned.style.height = '';
+    const xml = new XMLSerializer().serializeToString(cloned);
+    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      }, 'image/png');
+    };
+    img.onerror = e => {
+      alert('Failed to rasterize SVG: ' + e);
+    };
+    img.src = url;
+  }
+
+  document.getElementById('dl-landscape').addEventListener('click', () => {
+    downloadSvgAsPng(landscapeSvg, 1200, 630, 'og-image.png');
+  });
+  document.getElementById('dl-square').addEventListener('click', () => {
+    downloadSvgAsPng(squareSvg, 1200, 1200, 'og-image-square.png');
+  });
+})();
+</script>
+</body>
+</html>

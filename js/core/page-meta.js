@@ -2,48 +2,48 @@
 const PAGE_META = {
   "cut:half": {
     "path": "/",
-    "title": "geometric.games — cut a polygon in half",
-    "description": "Slice irregular polygons into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free."
+    "title": "geometric.games — cut a shape in half",
+    "description": "Slice irregular shapes into two equal halves with a single straight line. Endless geometry puzzles in the browser, no install, free."
   },
   "cut:ratio": {
     "path": "/cut/ratio/",
-    "title": "Target ratio cut — slice a polygon to an exact ratio | geometric.games",
-    "description": "Each round gives a random target ratio from 5/95 to 50/50. Cut the polygon with one line so the smaller piece matches the percentage."
+    "title": "Target ratio cut — slice a shape to an exact ratio | geometric.games",
+    "description": "Each round gives a random target ratio from 5/95 to 50/50. Cut the shape with one line so the smaller piece matches the percentage."
   },
   "cut:quad": {
     "path": "/cut/quad/",
-    "title": "Quad cut — split a polygon into 4 equal pieces | geometric.games",
-    "description": "Place two cuts that cross inside the polygon to split it into four equal quarters by area. Based on the Courant–Robbins theorem."
+    "title": "Quad cut — split a shape into 4 equal pieces | geometric.games",
+    "description": "Place two cuts that cross inside the shape to split it into four equal quarters by area. Based on the Courant–Robbins theorem."
   },
   "cut:tri": {
     "path": "/cut/tri/",
-    "title": "Tri cut — divide a polygon into 3 equal pieces | geometric.games",
+    "title": "Tri cut — divide a shape into 3 equal pieces | geometric.games",
     "description": "Two straight cuts, three equal pieces by area — but the second cut must leave one piece whole. An IVT-driven geometry puzzle."
   },
   "cut:angle": {
     "path": "/cut/angle/",
-    "title": "Fixed-angle polygon bisector — find the 50/50 slide | geometric.games",
-    "description": "The cut direction is locked. Slide the line perpendicular to itself to find the unique parallel line that bisects the polygon by area."
+    "title": "Fixed-angle area bisector — find the 50/50 slide | geometric.games",
+    "description": "The cut direction is locked. Slide the line perpendicular to itself to find the unique parallel line that bisects the shape by area."
   },
   "inscribe:square": {
     "path": "/inscribe/",
     "title": "Inscribed square puzzle — play the Toeplitz problem | geometric.games",
-    "description": "Drop four points on a polygon’s outline to form a perfect square. A playable take on the 110-year-old Inscribed Square Problem (Toeplitz, 1911)."
+    "description": "Drop four points on a shape’s outline to form a perfect square. A playable take on the 110-year-old Inscribed Square Problem (Toeplitz, 1911)."
   },
   "inscribe:triangle": {
     "path": "/inscribe/triangle/",
     "title": "Inscribed equilateral triangle puzzle | geometric.games",
-    "description": "Place three points on a polygon’s outline so they form an equilateral triangle — the solved sibling of the Toeplitz problem."
+    "description": "Place three points on a shape’s outline so they form an equilateral triangle — the solved sibling of the Toeplitz problem."
   },
   "balance:pole": {
     "path": "/balance/",
-    "title": "Pole balance puzzle — slide the pivot under a polygon | geometric.games",
-    "description": "Slide a pole under an irregular polygon so it doesn’t tip. Scored by how close the pivot is to the polygon’s true centroid."
+    "title": "Pole balance puzzle — slide the pivot under a shape | geometric.games",
+    "description": "Slide a pole under an irregular shape so it doesn’t tip. Scored by how close the pivot is to the shape’s true centroid."
   },
   "balance:centroid": {
     "path": "/balance/centroid/",
-    "title": "Centroid guess — find the center of mass of a polygon | geometric.games",
-    "description": "Tap where you think the polygon’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely."
+    "title": "Centroid guess — find the center of mass of a shape | geometric.games",
+    "description": "Tap where you think the shape’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely."
   }
 };
 

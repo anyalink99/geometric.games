@@ -75,9 +75,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <h1>Where is the center of mass of a shape with a hole?</h1>
     <p class="article-meta"><time datetime="2026-04-20">2026-04-20</time></p>
     <div class="article-body">
-      <h2>Find the polygon’s center of mass</h2>
+      <h2>Find the shape’s center of mass</h2>
   <p>
-    Tap anywhere on the board to place your guess for the polygon’s centroid. Drag to refine, then
+    Tap anywhere on the board to place your guess for the shape’s centroid. Drag to refine, then
     confirm. The puzzle scores you on the distance between your guess and the true centroid — the
     closer, the higher the score. Shapes with holes, concave notches, and long thin limbs are the
     ones where intuition breaks.
@@ -86,8 +86,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h2>The math: the centroid formula</h2>
   <p>
     For a uniformly dense planar region, the <b>centroid</b> is the area-weighted average of all
-    points inside the shape. For polygons it has a closed-form formula as a sum over the vertices,
-    but the qualitative facts are more useful while playing:
+    points inside the shape. For polygons it has a closed-form formula as a sum over the vertices —
+    and since the curved shapes here are sampled into dense polylines before the math runs, the
+    same formula works in practice. But the qualitative facts are more useful while playing:
   </p>
   <ul>
     <li>The centroid is invariant under translation and rotation.</li>

@@ -4,7 +4,7 @@
 
 # geometric.games
 
-**Cut, inscribe, and balance polygons. Endless geometry puzzles in the browser.**
+**Cut, inscribe, and balance shapes. Endless geometry puzzles in the browser.**
 
 ### ▶ [**Play now at geometric.games**](https://geometric.games/)
 
@@ -16,7 +16,7 @@ No install. No sign-up. No ads. Just shapes and a straight line.
 
 ## What is this?
 
-Every round, the game draws a fresh irregular polygon — sometimes with a hole punched through it — and gives you one geometric task to solve. You drag, tap, and drop until your answer matches the true math, then press **Confirm** to score how close you got.
+Every round, the game draws a fresh irregular shape — sometimes with a hole punched through it — and gives you one geometric task to solve. You drag, tap, and drop until your answer matches the true math, then press **Confirm** to score how close you got.
 
 It's a small browser game built around a simple idea: **classical geometry makes surprisingly good puzzles**. Under every mode there's a real theorem — the Intermediate Value Theorem, Toeplitz's Inscribed Square Problem (still open after 110+ years!), Courant–Robbins four-piece partition, centroids with holes — and you're essentially playing the proof by hand.
 
@@ -26,7 +26,7 @@ Shapes are generated from random seeds, so you never run out. Or pick the **Dail
 
 ## The three modes
 
-### ✂️ Cut — *slice a polygon with straight lines*
+### ✂️ Cut — *slice a shape with straight lines*
 
 | Variation | Goal |
 |---|---|
@@ -45,7 +45,7 @@ Shapes are generated from random seeds, so you never run out. Or pick the **Dail
 | **Square** | Place four points on the outline to form the closest possible square. |
 | **Equilateral Triangle** | Place three points forming a triangle with equal sides and 60° angles. |
 
-> *Math behind it:* Toeplitz's 1911 Inscribed Square Problem asks whether every closed curve contains 4 points forming a square. Proven for polygons and smooth curves — but for arbitrary Jordan curves it's **still open**. The equilateral-triangle case is fully settled (Nielsen & Wright, 1990).
+> *Math behind it:* Toeplitz's 1911 Inscribed Square Problem asks whether every closed curve contains 4 points forming a square. Proven for polygons, smooth curves, and piecewise-smooth curves like the ones here — but for arbitrary Jordan curves it's **still open**. The equilateral-triangle case is fully settled (Nielsen & Wright, 1990).
 
 ### ⚖️ Balance — *find the center of gravity*
 

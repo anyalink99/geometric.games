@@ -75,9 +75,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <h1>The Inscribed Square Problem: 110 years unsolved</h1>
     <p class="article-meta"><time datetime="2026-04-20">2026-04-20</time></p>
     <div class="article-body">
-      <h2>Inscribe a square inside a polygon</h2>
+      <h2>Inscribe a square inside a shape</h2>
   <p>
-    Place <b>four points</b> on the polygon’s outline so they form a square. As you move your
+    Place <b>four points</b> on the shape’s outline so they form a square. As you move your
     cursor, the nearest outline point follows it — tap to drop a vertex. After four drops the
     quadrilateral is scored: closer to a perfect square (equal sides, 90° angles) means a higher
     score. You can drag any placed point afterwards to refine.
@@ -90,20 +90,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <i>probably yes</i> — but it’s still <b>one of the oldest open problems in geometry</b>.
   </p>
   <p>
-    The problem is settled for nice classes of curves: polygons, convex curves, smooth curves, and
-    curves with bounded curvature all provably have an inscribed square. Recent work by Greene &amp;
-    Lobb (2020) settled the problem for smooth Jordan curves by connecting it to symplectic
-    geometry. But for <i>arbitrary</i> Jordan curves — including pathological fractal ones —
-    existence is still unproved.
+    The problem is settled for nice classes of curves: polygons, convex curves, smooth curves,
+    piecewise-smooth curves, and curves with bounded curvature all provably have an inscribed
+    square. Recent work by Greene &amp; Lobb (2020) settled the problem for smooth Jordan curves by
+    connecting it to symplectic geometry. But for <i>arbitrary</i> Jordan curves — including
+    pathological fractal ones — existence is still unproved.
   </p>
   <p>
-    On this page every generated shape is a polygon, so a perfect inscribed square is guaranteed to
-    exist. Your job is to find one by eye.
+    On this page every generated shape is piecewise-smooth — a mix of straight segments, circular
+    arcs, and Bezier curves. That’s well within the classes where the problem is proven, so a
+    perfect inscribed square always exists on these shapes. Your job is to find one by eye.
   </p>
 
   <h2>Tips for spotting an inscribed square</h2>
   <ul>
-    <li>Start with a diameter: pick two points on roughly opposite sides of the polygon — they’re candidates for the square’s diagonal.</li>
+    <li>Start with a diameter: pick two points on roughly opposite sides of the shape — they’re candidates for the square’s diagonal.</li>
     <li>The two other vertices must sit on a line perpendicular to that diagonal, with the same length.</li>
     <li>Convex regions usually have several inscribed squares; concave shapes sometimes have just one obvious one.</li>
     <li>If three vertices already look good but the fourth is hard to place, adjust vertex two — the constraint often means the whole square has to rotate slightly.</li>
@@ -112,8 +113,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h2>Related</h2>
   <ul>
     <li><a href="../../inscribe/triangle/">Inscribed Equilateral Triangle</a> — the solved sibling of the Toeplitz problem.</li>
-    <li><a href="../../">Cut</a> — slice polygons by area instead of placing vertices.</li>
-    <li><a href="../../balance/">Balance</a> — find where the polygon’s centroid sits.</li>
+    <li><a href="../../">Cut</a> — slice shapes by area instead of placing vertices.</li>
+    <li><a href="../../balance/">Balance</a> — find where the shape’s centroid sits.</li>
   </ul>
     </div>
     <div class="article-cta">
