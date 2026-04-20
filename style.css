@@ -327,7 +327,8 @@ body[data-mode="inscribe"][data-inscribe-variation="triangle"] .help-inscribe-tr
 
 body[data-mode="balance"] .help-balance > div { display: none; }
 body[data-mode="balance"][data-balance-variation="centroid"] .help-balance-centroid,
-body[data-mode="balance"][data-balance-variation="pole"]     .help-balance-pole     { display: block; }
+body[data-mode="balance"][data-balance-variation="pole"]     .help-balance-pole,
+body[data-mode="balance"][data-balance-variation="perch"]    .help-balance-perch    { display: block; }
 
 .math-note {
   font-size: 0.82rem;
@@ -659,6 +660,43 @@ body[data-mode="balance"][data-balance-variation="pole"]     .help-balance-pole 
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(244,114,182,0.5));
 }
+
+#pyramid-layer { pointer-events: none; }
+.pyramid-fill {
+  fill: #2d2a3a;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 6px rgba(192,132,252,0.4));
+}
+.perch-tip {
+  fill: white;
+  stroke: var(--accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 5px rgba(192,132,252,0.65));
+}
+.rot-handle {
+  fill: white;
+  stroke: var(--accent);
+  stroke-width: 2;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 0 5px rgba(192,132,252,0.6));
+}
+.rot-handle.dragging { cursor: grabbing; }
+.rot-handle-icon {
+  stroke: var(--accent-deep);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  pointer-events: none;
+}
+body[data-balance-variation="perch"] #shape-layer .shape-fill { pointer-events: fill; }
+body[data-balance-variation="perch"] #shape-layer > g { cursor: grab; touch-action: none; }
+body[data-balance-variation="perch"] #shape-layer > g.dragging { cursor: grabbing; }
+body[data-balance-variation="perch"] #shape-layer > g.locked { cursor: default; }
 
 .modal-back.closing { display: flex; }
 .modal-back.closing .modal { animation: fadeScaleOut 0.22s var(--s-curve) forwards; }

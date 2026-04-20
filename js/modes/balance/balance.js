@@ -5,12 +5,25 @@ function balanceVariation() {
 registerModeAPI('balance', {
   pickShape() { return generateBalanceShape(); },
   nudge(dx, dy) {
-    if (balanceVariation() === 'pole') {
+    const v = balanceVariation();
+    if (v === 'pole') {
       if (poleState.confirmed || poleState.pole == null) return;
       const next = Math.max(poleState.xMin, Math.min(poleState.xMax, poleState.pole + dx));
       poleState.pole = next;
       drawPole(next);
       updatePoleHint();
+      updateActionButton();
+    } else if (v === 'perch') {
+      if (perchState.confirmed) return;
+      const prevTx = perchState.tx, prevTy = perchState.ty;
+      perchState.tx += dx;
+      perchState.ty += dy;
+      if (!perchResolve() || !perchHandleFits()) {
+        perchState.tx = prevTx;
+        perchState.ty = prevTy;
+      }
+      updateShapeTransform();
+      updateHandlePos();
       updateActionButton();
     } else {
       if (centroidState.confirmed || !centroidState.guess) return;
@@ -26,14 +39,19 @@ registerModeAPI('balance', {
 function balanceReset() {
   centroidReset();
   poleReset();
+  perchReset();
 }
 
 function updateBalanceHint() {
-  if (balanceVariation() === 'pole') updatePoleHint();
+  const v = balanceVariation();
+  if (v === 'pole') updatePoleHint();
+  else if (v === 'perch') updatePerchHint();
   else updateCentroidHint();
 }
 
 function confirmBalance(opts) {
-  if (balanceVariation() === 'pole') confirmPole(opts);
+  const v = balanceVariation();
+  if (v === 'pole') confirmPole(opts);
+  else if (v === 'perch') confirmPerch(opts);
   else confirmCentroid(opts);
 }

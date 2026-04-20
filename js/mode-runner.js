@@ -47,22 +47,29 @@ const modeRunner = {
   balance: new ModeInterface({
     reset() { balanceReset(); },
     onShapeReady() {
-      if (balanceVariation() === 'pole') onPoleShapeReady();
+      const v = balanceVariation();
+      if (v === 'pole') onPoleShapeReady();
+      else if (v === 'perch') onPerchShapeReady();
       updateBalanceHint();
-      dom.hitPad.style.cursor = 'crosshair';
+      dom.hitPad.style.cursor = v === 'perch' ? '' : 'crosshair';
     },
     confirm(opts) { confirmBalance(opts); },
     snapshot() {
-      return balanceVariation() === 'pole' ? poleSnapshot() : centroidSnapshot();
+      const v = balanceVariation();
+      if (v === 'pole') return poleSnapshot();
+      if (v === 'perch') return perchSnapshot();
+      return centroidSnapshot();
     },
     restoreSnapshot(snap) {
-      if (balanceVariation() === 'pole') poleRestoreSnapshot(snap);
+      const v = balanceVariation();
+      if (v === 'pole') poleRestoreSnapshot(snap);
+      else if (v === 'perch') perchRestoreSnapshot(snap);
       else centroidRestoreSnapshot(snap);
     },
     hasPendingConfirm() {
-      if (balanceVariation() === 'pole') {
-        return !poleState.confirmed && poleState.pole != null;
-      }
+      const v = balanceVariation();
+      if (v === 'pole') return !poleState.confirmed && poleState.pole != null;
+      if (v === 'perch') return !perchState.confirmed;
       return !centroidState.confirmed && centroidState.guess != null;
     },
   }),

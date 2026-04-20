@@ -93,6 +93,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <desc id="board-desc">An irregular shape on a grid. Drag or tap to place your answer. The hint below the board describes what to solve.</desc>
       <rect class="hit-pad" id="hit-pad" x="-60" y="-80" width="520" height="560"/>
       <g id="pole-layer"></g>
+      <g id="pyramid-layer"></g>
       <g id="shape-layer"></g>
       <g id="cut-layer"></g>
       <g id="cut-lines-layer"></g>
@@ -104,6 +105,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <g id="centroid-ideal-layer"></g>
       <g id="centroid-point-layer"></g>
       <g id="balance-hover-layer"></g>
+      <g id="handle-layer"></g>
       <g id="label-layer"></g>
       <line id="cut-preview" class="cut-line preview" style="display:none"/>
     </svg>
@@ -205,6 +207,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </ul>
           <p class="math-note"><b>Math:</b> only the horizontal offset between the pole and the centroid's X matters for tipping — it's an inverted pendulum whose torque is <i>m·g·Δx</i>.</p>
         </div>
+        <div class="help-balance-perch">
+          <p>Place the shape on the pyramid <b>tip</b> so it <b>balances</b>.</p>
+          <ul>
+            <li>Drag the shape to translate, use the purple handle to rotate</li>
+            <li>The shape must touch the tip, then press <b>Confirm</b></li>
+          </ul>
+          <p class="math-note"><b>Math:</b> for any 2D shape there is always an orientation that balances on a single point — the Intermediate Value Theorem applied to the horizontal offset of the bottom point from the centroid as the shape rotates.</p>
+        </div>
       </div>
       <div class="close-row"><button class="btn" id="close-help">Got it</button></div>
     </div>
@@ -303,6 +313,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="mode-title">Centroid</div>
             <div class="mode-desc">Tap the board where you think the center of mass is.</div>
           </button>
+          <button class="var-card" data-var="perch">
+            <div class="mode-title">Perch Balance</div>
+            <div class="mode-desc">Rotate and place the shape on the pyramid tip so it balances.</div>
+          </button>
         </div>
       </div>
 
@@ -343,6 +357,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="js/modes/inscribe/stats.js"></script>
 <script src="js/modes/balance/centroid.js"></script>
 <script src="js/modes/balance/pole.js"></script>
+<script src="js/modes/balance/perch.js"></script>
 <script src="js/modes/balance/balance.js"></script>
 <script src="js/modes/balance/input.js"></script>
 <script src="js/modes/balance/stats.js"></script>

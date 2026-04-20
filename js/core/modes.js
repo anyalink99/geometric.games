@@ -63,10 +63,12 @@ const MODE_REGISTRY = {
     variationLabels: {
       pole: 'Pole Balance',
       centroid: 'Centroid',
+      perch: 'Perch Balance',
     },
     variationShareLabels: {
       pole: 'POLE',
       centroid: 'CENTROID',
+      perch: 'PERCH',
     },
     api: {},
   },

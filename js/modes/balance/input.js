@@ -3,6 +3,7 @@ function initBalanceInput() {
 
   hit.addEventListener('pointerdown', e => {
     if (state.mode !== 'balance') return;
+    if (balanceVariation() === 'perch') return;
     if (balanceVariation() === 'pole') { handlePolePointerDown(e); return; }
     if (centroidState.confirmed) return;
     if (centroidState.activePointerId !== null) return;
@@ -26,6 +27,7 @@ function initBalanceInput() {
 
   hit.addEventListener('pointermove', e => {
     if (state.mode !== 'balance') return;
+    if (balanceVariation() === 'perch') return;
     if (balanceVariation() === 'pole') { handlePolePointerMove(e); return; }
     if (centroidState.confirmed) return;
     e.preventDefault();
@@ -42,6 +44,7 @@ function initBalanceInput() {
 
   function endCentroidDrag(e) {
     if (state.mode !== 'balance') return;
+    if (balanceVariation() === 'perch') return;
     if (balanceVariation() === 'pole') { handlePolePointerUp(e); return; }
     if (e.pointerId !== centroidState.activePointerId) return;
     if (hit.hasPointerCapture && hit.hasPointerCapture(e.pointerId)) {
@@ -56,6 +59,7 @@ function initBalanceInput() {
 
   hit.addEventListener('pointerleave', e => {
     if (state.mode !== 'balance') return;
+    if (balanceVariation() === 'perch') return;
     if (balanceVariation() === 'pole') {
       if (poleState.confirmed) return;
       if (e.pointerType !== 'mouse') return;
