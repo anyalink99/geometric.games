@@ -9,16 +9,39 @@ const state = {
   daily: false,
 };
 
-function balanceVariation() {
-  return state.balanceVariation || 'pole';
+function currentVariation() {
+  const cfg = modeConfig(state.mode);
+  return cfg ? state[cfg.stateKey] : 'half';
 }
 
-function currentVariation() {
-  if (state.mode === 'cut') return state.cutVariation;
-  if (state.mode === 'inscribe') return state.inscribeVariation;
-  if (state.mode === 'balance') return state.balanceVariation;
-  return 'half';
-}
+// Per-mode lifecycle hooks. `reset()` clears in-memory state + transient SVG
+// layers; `init()` runs after the fresh shape is rendered. Both are looked up
+// by mode at the call site, so newShape() / setVariation() never branch on
+// mode themselves.
+const MODE_HOOKS = {
+  cut: {
+    reset() { cutReset(); },
+    init() {
+      cutOnNewShape();
+      dom.hitPad.style.cursor = '';
+    },
+  },
+  inscribe: {
+    reset() { inscribeReset(); },
+    init() {
+      precomputeIdeal(state.shape.outer);
+      renderInscribeAll();
+    },
+  },
+  balance: {
+    reset() { balanceReset(); },
+    init() {
+      if (balanceVariation() === 'pole') onPoleShapeReady();
+      updateBalanceHint();
+      dom.hitPad.style.cursor = 'crosshair';
+    },
+  },
+};
 
 function updateActionButton() {
   const btn = dom.newBtn;
@@ -60,6 +83,14 @@ function generateShapeForMode() {
   return generateShape();
 }
 
+// Reset every mode's in-memory state on each new shape so leftover state from
+// a prior mode never bleeds through after a mode switch. Cheap (just clears
+// SVG layers and zeroes a few state objects); safer than the prior
+// always-call-cutReset-only quirk.
+function resetAllModes() {
+  for (const m of MODE_LIST) MODE_HOOKS[m].reset();
+}
+
 function newShape(hash, nav = 'push') {
   let h = hash;
   if (!h) {
@@ -70,21 +101,9 @@ function newShape(hash, nav = 'push') {
   state.hash = h;
   state.shape = withSeed(seedFromString(h), generateShapeForMode);
   state.locked = false;
-  cutReset();
+  resetAllModes();
   renderShape(state.shape);
-  if (state.mode === 'inscribe') {
-    inscribeReset();
-    renderInscribeAll();
-    precomputeIdeal(state.shape.outer);
-  } else if (state.mode === 'balance') {
-    balanceReset();
-    updateBalanceHint();
-    dom.hitPad.style.cursor = 'crosshair';
-    if (balanceVariation() === 'pole') onPoleShapeReady();
-  } else {
-    cutOnNewShape();
-    dom.hitPad.style.cursor = '';
-  }
+  MODE_HOOKS[state.mode].init();
   dom.newBtn.classList.remove('pulse');
   updateActionButton();
   // In daily mode the URL is ?daily=1 (no seed hash — it's derived from the date).
@@ -94,65 +113,38 @@ function newShape(hash, nav = 'push') {
 }
 
 function setMode(m) {
-  if (m !== 'cut' && m !== 'inscribe' && m !== 'balance') return;
+  if (!isValidMode(m)) return;
   state.mode = m;
   document.body.dataset.mode = m;
   try { localStorage.setItem(MODE_KEY, m); } catch (e) {}
   newShape();
 }
 
-function setCutVariation(v) {
-  if (!CUT_VARIATIONS.includes(v)) return;
-  if (state.cutVariation === v && state.mode === 'cut') return;
-  state.cutVariation = v;
-  document.body.dataset.cutVariation = v;
-  try { localStorage.setItem(CUT_VARIATION_KEY, v); } catch (e) {}
-  if (state.mode === 'cut') {
-    state.locked = false;
-    cutReset();
-    renderShape(state.shape);
-    cutOnNewShape();
-    dom.newBtn.classList.remove('pulse');
-    updateActionButton();
-    pushRoute('cut', v, state.daily ? null : state.hash, state.daily);
-  }
+// Write a variation choice for `mode` into state, body dataset, and storage.
+// Used both as a primitive by setVariation and by cross-mode applyPuzzleChoice
+// (where we want to commit the variation before switching modes so newShape()
+// generates the right kind of shape).
+function commitVariationChoice(mode, variation) {
+  const cfg = modeConfig(mode);
+  if (!cfg) return;
+  state[cfg.stateKey] = variation;
+  document.body.dataset[cfg.bodyAttr] = variation;
+  try { localStorage.setItem(cfg.storageKey, variation); } catch (e) {}
 }
 
-function setBalanceVariation(v) {
-  if (!BALANCE_VARIATIONS.includes(v)) return;
-  if (state.balanceVariation === v && state.mode === 'balance') return;
-  state.balanceVariation = v;
-  document.body.dataset.balanceVariation = v;
-  try { localStorage.setItem(BALANCE_VARIATION_KEY, v); } catch (e) {}
-  if (state.mode === 'balance') {
-    state.locked = false;
-    balanceReset();
-    renderShape(state.shape);
-    if (v === 'pole') onPoleShapeReady();
-    updateBalanceHint();
-    dom.hitPad.style.cursor = 'crosshair';
-    dom.newBtn.classList.remove('pulse');
-    updateActionButton();
-    pushRoute('balance', v, state.daily ? null : state.hash, state.daily);
-  }
-}
-
-function setInscribeVariation(v) {
-  if (!INSCRIBE_VARIATIONS.includes(v)) return;
-  if (state.inscribeVariation === v && state.mode === 'inscribe') return;
-  state.inscribeVariation = v;
-  document.body.dataset.inscribeVariation = v;
-  try { localStorage.setItem(INSCRIBE_VARIATION_KEY, v); } catch (e) {}
-  if (state.mode === 'inscribe') {
-    state.locked = false;
-    inscribeReset();
-    renderShape(state.shape);
-    precomputeIdeal(state.shape.outer);
-    renderInscribeAll();
-    dom.newBtn.classList.remove('pulse');
-    updateActionButton();
-    pushRoute('inscribe', v, state.daily ? null : state.hash, state.daily);
-  }
+function setVariation(mode, variation) {
+  if (!isValidVariation(mode, variation)) return;
+  const cfg = modeConfig(mode);
+  if (state[cfg.stateKey] === variation && state.mode === mode) return;
+  commitVariationChoice(mode, variation);
+  if (state.mode !== mode) return;
+  state.locked = false;
+  MODE_HOOKS[mode].reset();
+  renderShape(state.shape);
+  MODE_HOOKS[mode].init();
+  dom.newBtn.classList.remove('pulse');
+  updateActionButton();
+  pushRoute(mode, variation, state.daily ? null : state.hash, state.daily);
 }
 
 // Toggle between endless (random each shape) and daily (one shared seed per
@@ -166,36 +158,15 @@ function setDailyMode(daily) {
 }
 
 // Apply a combined mode+variation selection from the unified puzzle modal.
-// Prefers a single shape regeneration and URL update.
+// Same-mode case uses setVariation (re-renders without a new shape); cross-mode
+// commits the target variation first, then setMode generates a fresh shape
+// already wired to the right variation.
 function applyPuzzleChoice(mode, variation) {
-  const varsByMode = {
-    cut: CUT_VARIATIONS,
-    inscribe: INSCRIBE_VARIATIONS,
-    balance: BALANCE_VARIATIONS,
-  };
-  if (!varsByMode[mode] || !varsByMode[mode].includes(variation)) return;
-
+  if (!isValidVariation(mode, variation)) return;
   if (state.mode === mode) {
-    if (mode === 'cut') setCutVariation(variation);
-    else if (mode === 'inscribe') setInscribeVariation(variation);
-    else if (mode === 'balance') setBalanceVariation(variation);
+    setVariation(mode, variation);
     return;
   }
-
-  // Cross-mode: update the target mode's variation in state + storage first,
-  // then switch mode so the new shape is generated with the right variation.
-  if (mode === 'cut') {
-    state.cutVariation = variation;
-    document.body.dataset.cutVariation = variation;
-    try { localStorage.setItem(CUT_VARIATION_KEY, variation); } catch (e) {}
-  } else if (mode === 'inscribe') {
-    state.inscribeVariation = variation;
-    document.body.dataset.inscribeVariation = variation;
-    try { localStorage.setItem(INSCRIBE_VARIATION_KEY, variation); } catch (e) {}
-  } else if (mode === 'balance') {
-    state.balanceVariation = variation;
-    document.body.dataset.balanceVariation = variation;
-    try { localStorage.setItem(BALANCE_VARIATION_KEY, variation); } catch (e) {}
-  }
+  commitVariationChoice(mode, variation);
   setMode(mode);
 }

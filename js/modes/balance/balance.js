@@ -1,3 +1,7 @@
+function balanceVariation() {
+  return state.balanceVariation || 'pole';
+}
+
 function balanceReset() {
   centroidReset();
   poleReset();

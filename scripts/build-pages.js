@@ -531,6 +531,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/core/random.js"></script>
 <script src="${rel}js/core/seed.js"></script>
 <script src="${rel}js/core/page-meta.js"></script>
+<script src="${rel}js/core/modes.js"></script>
 <script src="${rel}js/core/router.js"></script>
 <script src="${rel}js/geometry/geometry.js"></script>
 <script src="${rel}js/geometry/inscribed-square.js"></script>

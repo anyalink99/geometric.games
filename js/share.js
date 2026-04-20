@@ -3,19 +3,6 @@
 
 const SHARE_CANVAS_SIZE = 1080;
 
-const MODE_LABELS_SHARE = { cut: 'CUT', inscribe: 'INSCRIBE', balance: 'BALANCE' };
-const VAR_LABELS_SHARE = {
-  half: 'HALF',
-  ratio: 'TARGET RATIO',
-  quad: 'QUAD',
-  tri: 'TRI',
-  angle: 'CONSTRAINED ANGLE',
-  square: 'SQUARE',
-  triangle: 'TRIANGLE',
-  pole: 'POLE',
-  centroid: 'CENTROID',
-};
-
 // CSS properties that actually affect the visible rendering of the SVG board.
 // We copy each element's computed value onto the clone as an inline style so
 // the serialized SVG is self-contained (no external stylesheet dependency).
@@ -34,7 +21,7 @@ const SHARE_SVG_STYLE_PROPS = [
 
 function shareLabel() {
   const v = currentVariation();
-  const base = `${MODE_LABELS_SHARE[state.mode] || ''} · ${VAR_LABELS_SHARE[v] || v.toUpperCase()}`;
+  const base = `${modeShareLabel(state.mode)} · ${variationShareLabel(state.mode, v)}`;
   if (state.daily) return `DAILY #${dailyIndex()}  ·  ${base}`;
   return base;
 }

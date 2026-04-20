@@ -13,8 +13,6 @@ const statsEls = {
   blPerfect: document.getElementById('bl-perfect'),
 };
 
-const MODES = ['cut', 'inscribe', 'balance'];
-
 // ---- Main action button (Confirm / New Shape) ----
 document.getElementById('new-btn').addEventListener('click', () => {
   const action = dom.newBtn.dataset.action;
@@ -37,38 +35,10 @@ const statsInscribeSection = document.getElementById('stats-inscribe-section');
 const statsBalanceSection = document.getElementById('stats-balance-section');
 const statsSubtitle = document.getElementById('stats-subtitle');
 
-const CUT_VARIATION_LABELS = {
-  half: 'Half',
-  ratio: 'Target Ratio',
-  quad: 'Quad Cut',
-  tri: 'Tri Cut',
-  angle: 'Constrained Angle',
-};
-const INSCRIBE_VARIATION_LABELS = {
-  square: 'Square',
-  triangle: 'Equilateral Triangle',
-};
-const BALANCE_VARIATION_LABELS = {
-  centroid: 'Centroid',
-  pole: 'Pole Balance',
-};
-
-function currentStatsVariation() {
-  if (state.mode === 'cut') return state.cutVariation;
-  if (state.mode === 'inscribe') return state.inscribeVariation;
-  if (state.mode === 'balance') return state.balanceVariation;
-  return null;
-}
-
 function updateStatsSubtitle() {
-  if (!statsSubtitle) return;
-  if (state.mode === 'cut') {
-    statsSubtitle.textContent = 'Cut · ' + (CUT_VARIATION_LABELS[state.cutVariation] || state.cutVariation);
-  } else if (state.mode === 'inscribe') {
-    statsSubtitle.textContent = 'Inscribe · ' + (INSCRIBE_VARIATION_LABELS[state.inscribeVariation] || state.inscribeVariation);
-  } else if (state.mode === 'balance') {
-    statsSubtitle.textContent = 'Balance · ' + (BALANCE_VARIATION_LABELS[state.balanceVariation] || state.balanceVariation);
-  }
+  const cfg = modeConfig(state.mode);
+  if (!statsSubtitle || !cfg) return;
+  statsSubtitle.textContent = cfg.label + ' · ' + variationLabel(state.mode, currentVariation());
 }
 
 function openStatsModal() {
@@ -76,14 +46,14 @@ function openStatsModal() {
   statsInscribeSection.style.display = state.mode === 'inscribe' ? '' : 'none';
   statsBalanceSection.style.display = state.mode === 'balance' ? '' : 'none';
   updateStatsSubtitle();
-  renderStatsInto(statsEls, state.mode, currentStatsVariation());
+  renderStatsInto(statsEls, state.mode, currentVariation());
   openModal('stats-modal');
 }
 
 document.getElementById('reset-stats').addEventListener('click', () => {
   if (confirm('Reset stats?')) {
-    resetStats(state.mode, currentStatsVariation());
-    renderStatsInto(statsEls, state.mode, currentStatsVariation());
+    resetStats(state.mode, currentVariation());
+    renderStatsInto(statsEls, state.mode, currentVariation());
   }
 });
 document.getElementById('stats-btn').addEventListener('click', openStatsModal);
@@ -230,36 +200,35 @@ const initialRoute = parseLocation();
 // parseLocation() is used as a fallback (e.g. if 404 redirected us here) and
 // always to pull the ?s= hash and ?daily=1 flag.
 let initialMode = window.__INITIAL_MODE || initialRoute.mode;
-if (!initialMode || !MODES.includes(initialMode)) {
+if (!isValidMode(initialMode)) {
   try { initialMode = localStorage.getItem(MODE_KEY); } catch (e) {}
-  if (!initialMode || !MODES.includes(initialMode)) initialMode = 'cut';
+  if (!isValidMode(initialMode)) initialMode = 'cut';
 }
 state.mode = initialMode;
 try { localStorage.setItem(MODE_KEY, state.mode); } catch (e) {}
 document.body.dataset.mode = state.mode;
 
-function pickInitialVariation(mode, urlVar, validList, storageKey, fallback) {
-  if (state.mode === mode && window.__INITIAL_VARIATION && validList.includes(window.__INITIAL_VARIATION)) {
+function pickInitialVariation(mode) {
+  const cfg = modeConfig(mode);
+  if (state.mode === mode && isValidVariation(mode, window.__INITIAL_VARIATION)) {
     return window.__INITIAL_VARIATION;
   }
-  if (state.mode === mode && urlVar && validList.includes(urlVar)) {
-    return urlVar;
+  if (state.mode === mode && isValidVariation(mode, initialRoute.variation)) {
+    return initialRoute.variation;
   }
   try {
-    const v = localStorage.getItem(storageKey);
-    if (v && validList.includes(v)) return v;
+    const v = localStorage.getItem(cfg.storageKey);
+    if (isValidVariation(mode, v)) return v;
   } catch (e) {}
-  return fallback;
+  return cfg.defaultVariation;
 }
 
-state.cutVariation = pickInitialVariation('cut', initialRoute.variation, CUT_VARIATIONS, CUT_VARIATION_KEY, 'half');
-document.body.dataset.cutVariation = state.cutVariation;
-
-state.inscribeVariation = pickInitialVariation('inscribe', initialRoute.variation, INSCRIBE_VARIATIONS, INSCRIBE_VARIATION_KEY, 'square');
-document.body.dataset.inscribeVariation = state.inscribeVariation;
-
-state.balanceVariation = pickInitialVariation('balance', initialRoute.variation, BALANCE_VARIATIONS, BALANCE_VARIATION_KEY, 'pole');
-document.body.dataset.balanceVariation = state.balanceVariation;
+for (const mode of MODE_LIST) {
+  const cfg = modeConfig(mode);
+  const v = pickInitialVariation(mode);
+  state[cfg.stateKey] = v;
+  document.body.dataset[cfg.bodyAttr] = v;
+}
 
 state.daily = !!initialRoute.daily;
 
@@ -273,16 +242,11 @@ window.addEventListener('popstate', () => {
     document.body.dataset.mode = state.mode;
     try { localStorage.setItem(MODE_KEY, state.mode); } catch (e) {}
   }
-  if (loc.variation) {
-    if (state.mode === 'cut' && loc.variation !== state.cutVariation) {
-      state.cutVariation = loc.variation;
-      document.body.dataset.cutVariation = loc.variation;
-    } else if (state.mode === 'inscribe' && loc.variation !== state.inscribeVariation) {
-      state.inscribeVariation = loc.variation;
-      document.body.dataset.inscribeVariation = loc.variation;
-    } else if (state.mode === 'balance' && loc.variation !== state.balanceVariation) {
-      state.balanceVariation = loc.variation;
-      document.body.dataset.balanceVariation = loc.variation;
+  if (loc.variation && isValidVariation(state.mode, loc.variation)) {
+    const cfg = modeConfig(state.mode);
+    if (state[cfg.stateKey] !== loc.variation) {
+      state[cfg.stateKey] = loc.variation;
+      document.body.dataset[cfg.bodyAttr] = loc.variation;
     }
   }
   const dailyChanged = !!loc.daily !== !!state.daily;
