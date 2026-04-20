@@ -34,6 +34,24 @@ function pointInPolygon(pt, pts) {
   return inside;
 }
 
+function isSimplePolygon(pts) {
+  const n = pts.length;
+  if (n < 4) return true;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      const c = pts[j], d = pts[(j + 1) % n];
+      const r1 = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+      const r2 = (b.x - a.x) * (d.y - a.y) - (b.y - a.y) * (d.x - a.x);
+      const r3 = (d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x);
+      const r4 = (d.x - c.x) * (b.y - c.y) - (d.y - c.y) * (b.x - c.x);
+      if (((r1 > 0) !== (r2 > 0)) && ((r3 > 0) !== (r4 > 0))) return false;
+    }
+  }
+  return true;
+}
+
 function segIntersectCount(a, b, poly) {
   let count = 0;
   for (let i = 0, n = poly.length; i < n; i++) {

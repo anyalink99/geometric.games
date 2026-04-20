@@ -87,17 +87,31 @@ function updateActionButton() {
   if (shareBtn) shareBtn.hidden = !state.locked;
 }
 
+function finalizeWithHoles(shape) {
+  const centered = centerShapeObject(shape);
+  return normalizeShapeArea(centered);
+}
+
+// One shot per branch: try the Balance-style path with probability, fall back
+// to the plain generator if it doesn't yield a normalizable result. No retries
+// — the plain generator is fast and always succeeds.
 function generateShapeForMode() {
   if (state.mode === 'inscribe') {
+    if (Math.random() < 0.25) {
+      const balance = generateInscribeBalanceShape();
+      if (balance) {
+        const finalized = finalizeWithHoles(balance);
+        if (finalized) return finalized;
+      }
+    }
     return generateShape({ noHoles: true, noSymmetry: true });
   }
   if (state.mode === 'balance') {
     return generateBalanceShape();
   }
   if (Math.random() < 0.15) {
-    const raw = generateBalanceShape();
-    const centered = centerShapeObject(raw);
-    return normalizeShapeArea(centered) || centered;
+    const finalized = finalizeWithHoles(generateBalanceShape());
+    if (finalized) return finalized;
   }
   return generateShape();
 }
@@ -110,15 +124,67 @@ function resetAllModes() {
   for (const m of MODE_LIST) MODE_HOOKS[m].reset();
 }
 
+// Precomputed next endless shape for the current mode+variation. Best-effort:
+// populated in idle time after each newShape(); if not ready when the user
+// clicks, we just generate synchronously. Idle-only — no setTimeout fallback
+// (a timer that fires during interaction is worse than a small sync freeze).
+let precomputed = null; // { mode, variation, hash, shape }
+let precomputeId = null;
+
+function cancelPrecompute() {
+  if (precomputeId != null && typeof cancelIdleCallback === 'function') {
+    cancelIdleCallback(precomputeId);
+  }
+  precomputeId = null;
+}
+
+function schedulePrecompute() {
+  cancelPrecompute();
+  precomputed = null;
+  if (state.daily) return;
+  if (typeof requestIdleCallback !== 'function') return;
+  const mode = state.mode;
+  const variation = currentVariation();
+  precomputeId = requestIdleCallback(() => {
+    precomputeId = null;
+    if (state.mode !== mode || currentVariation() !== variation || state.daily) return;
+    const hash = generateHash();
+    let shape;
+    try { shape = withSeed(seedFromString(hash), generateShapeForMode); }
+    catch (e) { return; }
+    if (state.mode !== mode || currentVariation() !== variation || state.daily) return;
+    precomputed = { mode, variation, hash, shape };
+  }, { timeout: 1500 });
+}
+
+function takePrecomputed() {
+  if (!precomputed) return null;
+  if (precomputed.mode !== state.mode || precomputed.variation !== currentVariation()) {
+    precomputed = null;
+    return null;
+  }
+  const p = precomputed;
+  precomputed = null;
+  return p;
+}
+
 function newShape(hash, nav = 'push') {
+  cancelPrecompute();
   let h = hash;
+  let cachedShape = null;
+  if (!h && !state.daily) {
+    const p = takePrecomputed();
+    if (p) { h = p.hash; cachedShape = p.shape; }
+  } else {
+    precomputed = null;
+  }
   if (!h) {
     h = state.daily
       ? dailyHashFor(state.mode, currentVariation())
       : generateHash();
   }
   state.hash = h;
-  state.shape = withSeed(seedFromString(h), generateShapeForMode);
+  state.shape = cachedShape || withSeed(seedFromString(h), generateShapeForMode);
   state.locked = false;
   resetAllModes();
   renderShape(state.shape);
@@ -138,6 +204,8 @@ function newShape(hash, nav = 'push') {
   const urlHash = state.daily ? null : state.hash;
   if (nav === 'replace') replaceRoute(state.mode, currentVariation(), urlHash, state.daily);
   else if (nav === 'push') pushRoute(state.mode, currentVariation(), urlHash, state.daily);
+
+  schedulePrecompute();
 }
 
 function replayDailyLock(lock) {

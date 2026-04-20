@@ -603,65 +603,54 @@ function tryMakeClusterHoles(outer) {
   return holes.length >= 3 ? holes : null;
 }
 
-function tryMakeBreakingHoles(outer) {
+function tryMakeSymmetricBreakingHoles(outer) {
   const count = 1 + Math.floor(Math.random() * 3);
-  const holes = [];
-  for (let i = 0; i < count; i++) {
-    const h = tryMakeCavityAvoiding(outer, holes);
-    if (!h) break;
-    holes.push(h);
-  }
-  return holes.length >= 1 ? holes : null;
-}
+  const targetRatio = 0.10 + Math.random() * 0.20;
+  const outerArea = polygonArea(outer);
+  const targetHoleArea = outerArea * targetRatio;
 
-function tryMakeCavityAvoiding(outer, existingHoles) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (const p of outer) {
-    if (p.x < minX) minX = p.x;
-    if (p.y < minY) minY = p.y;
-    if (p.x > maxX) maxX = p.x;
-    if (p.y > maxY) maxY = p.y;
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
   }
-  const margin = 9;
-  for (let tries = 0; tries < 70; tries++) {
-    const cx = rand(minX, maxX);
-    const cy = rand(minY, maxY);
-    const center = { x: cx, y: cy };
-    if (!pointInPolygon(center, outer)) continue;
-    let blocked = false;
-    for (const h of existingHoles) {
-      if (pointInPolygon(center, h)) { blocked = true; break; }
+  const padX = (maxX - minX) * 0.3;
+  const padY = (maxY - minY) * 0.3;
+
+  for (let layout = 0; layout < 15; layout++) {
+    const clippedHoles = [];
+    let totalArea = 0;
+    for (let h = 0; h < count; h++) {
+      const remaining = Math.max(0, targetHoleArea - totalArea);
+      const slots = count - h;
+      const perHoleTarget = Math.max(300, remaining / slots);
+      const placed = placeBalanceHole(
+        outer, clippedHoles, perHoleTarget,
+        minX - padX, maxX + padX, minY - padY, maxY + padY
+      );
+      if (!placed) break;
+      clippedHoles.push(placed);
+      totalArea += polygonArea(placed);
     }
-    if (blocked) continue;
-    let minDist = distPointToPolygon(center, outer);
-    for (const h of existingHoles) {
-      minDist = Math.min(minDist, distPointToPolygon(center, h));
-    }
-    if (minDist < 20) continue;
-    const maxR = Math.min(minDist - margin, 30);
-    if (maxR < 9) continue;
-    const type = Math.random() < 0.6 ? 'circle' : 'lens';
-    let pts;
-    if (type === 'circle') {
-      const r = rand(9, maxR);
-      pts = makeCircleCavity(cx, cy, r);
-    } else {
-      const ang = rand(0, TAU);
-      const len = rand(22, Math.min(64, (minDist - margin) * 2 * 0.85));
-      const bulge = len * rand(0.22, 0.42);
-      if (bulge > maxR) continue;
-      pts = makeLensCavity(cx, cy, len, ang, bulge);
-    }
-    if (!cavityFitsInside(pts, outer, margin)) continue;
-    let overlaps = false;
-    for (const h of existingHoles) {
-      for (const p of pts) {
-        if (pointInPolygon(p, h)) { overlaps = true; break; }
+    if (clippedHoles.length !== count) continue;
+    const tol = outerArea * 0.05;
+    const lo = Math.max(outerArea * 0.08, targetHoleArea - tol);
+    const hi = Math.min(outerArea * 0.32, targetHoleArea + tol);
+    if (totalArea < lo || totalArea > hi) continue;
+
+    let currentOuter = outer;
+    const interiorHoles = [];
+    for (const hole of clippedHoles) {
+      const { merged, leftover } = mergeBoundaryHoleIntoOuter(currentOuter, hole, 1.2);
+      if (merged) { currentOuter = merged; continue; }
+      if (!leftover) continue;
+      let touchesBoundary = false;
+      for (const p of leftover) {
+        if (locateOnPolygonBoundary(p, currentOuter, 2.0)) { touchesBoundary = true; break; }
       }
-      if (overlaps) break;
+      if (!touchesBoundary) interiorHoles.push(leftover);
     }
-    if (overlaps) continue;
-    return pts;
+    return { outer: currentOuter, holes: interiorHoles };
   }
   return null;
 }
@@ -799,6 +788,57 @@ function generateBalanceShape() {
   return generateShape();
 }
 
+// Place one boundary-crossing indent and merge it into the outer contour.
+// Returns the new outer, or null if we couldn't find a placement that merges
+// cleanly within a few tries.
+function placeIndentAndMerge(outer, targetArea) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of outer) {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  }
+  const padX = (maxX - minX) * 0.3;
+  const padY = (maxY - minY) * 0.3;
+  for (let tries = 0; tries < 10; tries++) {
+    const placed = placeBalanceHole(
+      outer, [], targetArea,
+      minX - padX, maxX + padX, minY - padY, maxY + padY
+    );
+    if (!placed) continue;
+    const { merged } = mergeBoundaryHoleIntoOuter(outer, placed, 1.2);
+    if (merged) return merged;
+  }
+  return null;
+}
+
+// Inscribe-flavored Balance shape: a plain outer with 1–2 boundary indents
+// merged into the contour. No interior holes, no splits. Moderate indent
+// ratio (10–25%) keeps the shape inscribable and avoids self-intersection.
+function generateInscribeBalanceShape() {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const built = generateOuter();
+    if (built.symmetric) continue;
+    const start = normalizeShapeArea(centerShapeObject({ outer: built.pts, holes: [] }));
+    if (!start) continue;
+
+    let current = start.outer;
+    const count = 1 + Math.floor(Math.random() * 2);
+    const ratio = 0.10 + Math.random() * 0.15;
+    const perHole = polygonArea(current) * ratio / count;
+
+    let ok = true;
+    for (let i = 0; i < count; i++) {
+      const next = placeIndentAndMerge(current, perHole);
+      if (!next) { ok = false; break; }
+      current = next;
+    }
+    if (!ok) continue;
+    if (!isSimplePolygon(current)) continue;
+    return { outer: current, holes: [] };
+  }
+  return null;
+}
+
 function generateShape(opts) {
   const noHoles = !!(opts && opts.noHoles);
   const noSymmetry = !!(opts && opts.noSymmetry);
@@ -817,9 +857,18 @@ function generateShape(opts) {
     if (noHoles) return normalized;
 
     if (built.symmetric) {
-      const breaking = tryMakeBreakingHoles(normalized.outer);
-      if (breaking && breaking.length) {
-        const withHoles = { outer: normalized.outer, holes: breaking };
+      const breaking = tryMakeSymmetricBreakingHoles(normalized.outer);
+      if (breaking) {
+        const holes = breaking.holes.slice();
+        if (Math.random() < 0.4) {
+          const extra = 1 + Math.floor(Math.random() * 3);
+          for (let i = 0; i < extra; i++) {
+            const small = tryMakeSmallHoleAvoiding(breaking.outer, holes);
+            if (!small) break;
+            holes.push(small);
+          }
+        }
+        const withHoles = { outer: breaking.outer, holes };
         const renormalized = normalizeShapeArea(withHoles);
         if (renormalized) return renormalized;
       }
