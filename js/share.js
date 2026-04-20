@@ -271,6 +271,7 @@ async function copyShareToClipboard() {
   } catch (e) {
     console.warn('build share png failed:', e);
     showToast("Couldn't build image", true);
+    trackWithContext('share_failed', { reason: 'build' });
     if (btn) btn.disabled = false;
     return;
   }
@@ -280,6 +281,7 @@ async function copyShareToClipboard() {
       new ClipboardItem({ 'image/png': png }),
     ]);
     showToast('Copied image to clipboard');
+    trackWithContext('share_copied', { method: 'clipboard' });
   } catch (clipboardErr) {
     console.warn('clipboard failed, falling back:', clipboardErr);
     try {
@@ -287,12 +289,15 @@ async function copyShareToClipboard() {
       const w = window.open(url, '_blank');
       if (!w) {
         showToast('Popup blocked — allow popups to share', true);
+        trackWithContext('share_failed', { reason: 'popup_blocked' });
       } else {
         showToast('Opened image in new tab');
         setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
+        trackWithContext('share_copied', { method: 'new_tab' });
       }
     } catch (openErr) {
       showToast("Couldn't share — try again", true);
+      trackWithContext('share_failed', { reason: 'open' });
     }
   } finally {
     if (btn) btn.disabled = false;
@@ -302,5 +307,8 @@ async function copyShareToClipboard() {
 (function wireShareButton() {
   const btn = document.getElementById('share-btn');
   if (!btn) return;
-  btn.addEventListener('click', () => { copyShareToClipboard(); });
+  btn.addEventListener('click', () => {
+    trackWithContext('share_click');
+    copyShareToClipboard();
+  });
 })();

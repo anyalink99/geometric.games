@@ -203,6 +203,12 @@ function finalizeCut(opts) {
     if (state.daily) {
       recordDailyResult('cut', v, cutSnapshot(), res.off < 0.5);
     }
+    trackWithContext('game_complete', {
+      score: +res.off.toFixed(2),
+      score_metric: 'off_percent',
+      perfect: res.off < 0.5,
+      hash: state.hash || null,
+    });
   }
   updateActionButton();
   if (!(state.daily && getTodayLock('cut', v))) {

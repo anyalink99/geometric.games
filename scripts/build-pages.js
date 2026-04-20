@@ -540,6 +540,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/core/daily-lock.js"></script>
 <script src="${rel}js/core/mode-stats.js"></script>
 <script src="${rel}js/core/workers.js"></script>
+<script src="${rel}js/core/analytics.js"></script>
 <script src="${rel}js/core/reset.js"></script>
 <script src="${rel}js/geometry/geometry.js"></script>
 <script src="${rel}js/geometry/inscribed-square.js"></script>

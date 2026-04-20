@@ -156,6 +156,12 @@ function confirmCentroid(opts) {
     if (state.daily) {
       recordDailyResult('balance', 'centroid', centroidSnapshot(), dist <= 5);
     }
+    trackWithContext('game_complete', {
+      score: +dist.toFixed(2),
+      score_metric: 'distance_px',
+      perfect: dist <= 5,
+      hash: state.hash || null,
+    });
   }
   state.locked = true;
   dom.hitPad.style.cursor = 'default';

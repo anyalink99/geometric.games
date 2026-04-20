@@ -481,10 +481,16 @@ function confirmInscribe(opts) {
   const v = inscribeVariation();
   if (!replay) {
     recordInscribeScore(v, res.score);
+    const winThreshold = v === 'triangle' ? 98 : 95;
     if (state.daily) {
-      const winThreshold = v === 'triangle' ? 98 : 95;
       recordDailyResult('inscribe', v, inscribeSnapshot(), res.score >= winThreshold);
     }
+    trackWithContext('game_complete', {
+      score: +res.score.toFixed(2),
+      score_metric: 'fit_percent',
+      perfect: res.score >= winThreshold,
+      hash: state.hash || null,
+    });
   }
   state.locked = true;
   updateActionButton();

@@ -26,7 +26,10 @@ setInterval(() => {
   if (isCurrentDailyLocked()) updateActionButton();
 }, 30000);
 
-document.getElementById('help-btn').addEventListener('click', () => openModal('help-modal'));
+document.getElementById('help-btn').addEventListener('click', () => {
+  openModal('help-modal');
+  trackWithContext('help_opened');
+});
 document.getElementById('close-help').addEventListener('click', () => closeModal('help-modal'));
 document.getElementById('close-stats').addEventListener('click', () => closeModal('stats-modal'));
 
@@ -46,6 +49,7 @@ function openStatsModal() {
   updateStatsSubtitle();
   renderStatsInto(statsEls, state.mode, currentVariation());
   openModal('stats-modal');
+  trackWithContext('stats_opened');
 }
 
 document.getElementById('reset-stats').addEventListener('click', () => {
@@ -102,7 +106,10 @@ function openPuzzleModal() {
   }
 }
 
-document.getElementById('gamemode-btn').addEventListener('click', openPuzzleModal);
+document.getElementById('gamemode-btn').addEventListener('click', () => {
+  openPuzzleModal();
+  trackWithContext('puzzle_modal_opened');
+});
 document.getElementById('close-puzzle').addEventListener('click', () => closeModal('puzzle-modal'));
 
 function switchPuzzleTab(newMode) {

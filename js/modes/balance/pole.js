@@ -173,6 +173,12 @@ function confirmPole(opts) {
     if (state.daily) {
       recordDailyResult('balance', 'pole', poleSnapshot(), !tipped);
     }
+    trackWithContext('game_complete', {
+      score: +absDx.toFixed(2),
+      score_metric: 'distance_px',
+      perfect: !tipped,
+      hash: state.hash || null,
+    });
   }
   showPoleVerdict(dx, tipped);
   state.locked = true;

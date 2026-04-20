@@ -134,6 +134,7 @@ function newShape(hash, nav = 'push') {
   if (nav === 'replace') replaceRoute(state.mode, currentVariation(), urlHash, state.daily);
   else if (nav === 'push') pushRoute(state.mode, currentVariation(), urlHash, state.daily);
 
+  trackWithContext('game_start', { hash: state.hash || null });
   schedulePrecompute();
 }
 
@@ -144,9 +145,11 @@ function replayDailyLock(lock) {
 
 function setMode(m) {
   if (!isValidMode(m)) return;
+  const from = state.mode;
   state.mode = m;
   document.body.dataset.mode = m;
   try { localStorage.setItem(MODE_KEY, m); } catch (e) {}
+  if (from !== m) trackEvent('mode_switch', { from, to: m });
   newShape();
 }
 
@@ -162,7 +165,9 @@ function setVariation(mode, variation) {
   if (!isValidVariation(mode, variation)) return;
   const cfg = modeConfig(mode);
   if (state[cfg.stateKey] === variation && state.mode === mode) return;
+  const from = state[cfg.stateKey];
   commitVariationChoice(mode, variation);
+  trackEvent('variation_switch', { mode, from, to: variation });
   if (state.mode !== mode) return;
   // Daily seed depends on (mode, variation), so changing variation = new shape + lock.
   if (state.daily) {
@@ -183,6 +188,7 @@ function setDailyMode(daily) {
   daily = !!daily;
   if (state.daily === daily) return;
   state.daily = daily;
+  trackEvent('daily_toggle', { mode: state.mode, variation: currentVariation(), on: daily });
   newShape();
 }
 
