@@ -460,7 +460,8 @@ function confirmInscribe(opts) {
   if (!replay) {
     recordInscribeScore(v, res.score);
     if (state.daily) {
-      recordDailyResult('inscribe', v, inscribeSnapshot(), res.score > 96);
+      const winThreshold = v === 'triangle' ? 98 : 95;
+      recordDailyResult('inscribe', v, inscribeSnapshot(), res.score >= winThreshold);
     }
   }
   state.locked = true;
