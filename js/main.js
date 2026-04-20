@@ -151,7 +151,6 @@ function switchPuzzleTab(newMode) {
   if (container._heightAnim) {
     container._heightAnim.cancel();
     container._heightAnim = null;
-    container.style.overflow = '';
   }
 
   const startH = container.offsetHeight;
@@ -160,9 +159,6 @@ function switchPuzzleTab(newMode) {
   const endH = container.offsetHeight;
   if (startH === endH) return;
 
-  // Clip overflow during the animation so transient content/container
-  // mismatch doesn't flash a scrollbar.
-  container.style.overflow = 'hidden';
   const anim = container.animate(
     [{ height: startH + 'px' }, { height: endH + 'px' }],
     { duration: 280, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
@@ -170,7 +166,6 @@ function switchPuzzleTab(newMode) {
   container._heightAnim = anim;
   anim.finished.finally(() => {
     if (container._heightAnim === anim) {
-      container.style.overflow = '';
       container._heightAnim = null;
     }
   });
