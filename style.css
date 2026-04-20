@@ -448,7 +448,26 @@ body[data-mode="balance"][data-balance-variation="pole"]     .help-balance-pole 
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192, 132, 252, 0.45) transparent;
+}
+.modal.modal-wide::-webkit-scrollbar {
+  width: 8px;
+}
+.modal.modal-wide::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px 4px;
+}
+.modal.modal-wide::-webkit-scrollbar-thumb {
+  background: rgba(192, 132, 252, 0.45);
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.modal.modal-wide::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 .modal-wide > h2 { flex-shrink: 0; }
 .modal-wide > .close-row { flex-shrink: 0; padding-top: 14px; }
