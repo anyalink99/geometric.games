@@ -129,6 +129,18 @@ function openPuzzleModal() {
   puzzleModalTab = state.mode;
   refreshPuzzleModal();
   openModal('puzzle-modal');
+  // Suppress scrollbar during the modal's fadeScaleIn animation — the
+  // initial layout pass can briefly compute an overflow before flex settles,
+  // causing a one-frame scrollbar flash. After the animation is done, CSS
+  // overflow-y: auto kicks back in (shows scrollbar only if truly needed).
+  const container = document.querySelector('#puzzle-modal .var-groups');
+  if (container) {
+    container.style.overflow = 'hidden';
+    setTimeout(() => {
+      // Leave tab-switch animation's own overflow handling alone.
+      if (!container._heightAnim) container.style.overflow = '';
+    }, 300);
+  }
 }
 
 document.getElementById('gamemode-btn').addEventListener('click', openPuzzleModal);
@@ -151,6 +163,7 @@ function switchPuzzleTab(newMode) {
   if (container._heightAnim) {
     container._heightAnim.cancel();
     container._heightAnim = null;
+    container.style.overflow = '';
   }
 
   const startH = container.offsetHeight;
@@ -159,6 +172,9 @@ function switchPuzzleTab(newMode) {
   const endH = container.offsetHeight;
   if (startH === endH) return;
 
+  // Clip overflow during the animation so transient content > container
+  // mismatch doesn't show a scrollbar while the height is mid-morph.
+  container.style.overflow = 'hidden';
   const anim = container.animate(
     [{ height: startH + 'px' }, { height: endH + 'px' }],
     { duration: 280, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
@@ -166,6 +182,7 @@ function switchPuzzleTab(newMode) {
   container._heightAnim = anim;
   anim.finished.finally(() => {
     if (container._heightAnim === anim) {
+      container.style.overflow = '';
       container._heightAnim = null;
     }
   });
