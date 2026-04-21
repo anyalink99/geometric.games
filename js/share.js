@@ -117,6 +117,14 @@ function inlineSvgStyles(originalRoot, cloneRoot) {
       }
     }
     if (decls) cln.setAttribute('style', decls);
+    // Bake CSS transform (used by Cut to fan pieces apart) into the SVG transform
+    // attribute — setAttribute('style', ...) above drops it, and CSS transforms on
+    // SVG elements aren't honored consistently when rendering via Image().
+    const tf = cs.transform;
+    if (tf && tf !== 'none') {
+      const existing = cln.getAttribute('transform');
+      cln.setAttribute('transform', existing ? `${existing} ${tf}` : tf);
+    }
   }
   for (const el of toRemove) {
     if (el && el.parentNode) el.parentNode.removeChild(el);
@@ -142,6 +150,10 @@ function buildBoardSvgBlob() {
   // cloneNode on HTML-doc SVG elements doesn't always set xmlns; Image() needs explicit dims.
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  // Let content that extends past the viewport draw (pieces translated during Cut
+  // can land outside the original viewBox before we retighten it).
+  clone.setAttribute('overflow', 'visible');
+  clone.style.overflow = 'visible';
 
   // Tighten viewBox to the actual content bbox so the shared image scales the result up
   // to fill the available canvas area. getBBox() needs the element rendered — attach off-screen.
