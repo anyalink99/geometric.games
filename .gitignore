@@ -1,3 +1,5 @@
+node_modules/
+tools/_dump_*.png
 .claude/
 .DS_Store
 Thumbs.db

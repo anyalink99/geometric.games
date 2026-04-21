@@ -131,6 +131,73 @@ function inlineSvgStyles(originalRoot, cloneRoot) {
   }
 }
 
+// Union of getBBox() across all leaf graphics descendants, expressed in the root's
+// user space. getBBox() on the root <svg> clips to the svg's own viewport and thus
+// hides content outside the original viewBox — unusable when elements have been
+// transformed outside it. We walk descendants and combine ancestor transforms
+// manually (getCTM is unreliable on detached/zero-sized svg trees).
+function unionDescendantBBox(root) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  function mul(a, b) {
+    return {
+      a: a.a * b.a + a.c * b.b,
+      b: a.b * b.a + a.d * b.b,
+      c: a.a * b.c + a.c * b.d,
+      d: a.b * b.c + a.d * b.d,
+      e: a.a * b.e + a.c * b.f + a.e,
+      f: a.b * b.e + a.d * b.f + a.f,
+    };
+  }
+  function apply(m, x, y) {
+    return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f };
+  }
+  // Combine all entries in an element's SVG transform list into a single matrix.
+  function localMatrix(el) {
+    const ident = { a:1, b:0, c:0, d:1, e:0, f:0 };
+    if (!el.transform || !el.transform.baseVal) return ident;
+    let m = ident;
+    const list = el.transform.baseVal;
+    for (let i = 0; i < list.numberOfItems; i++) {
+      const mx = list.getItem(i).matrix;
+      m = mul(m, { a: mx.a, b: mx.b, c: mx.c, d: mx.d, e: mx.e, f: mx.f });
+    }
+    return m;
+  }
+  function walk(el, parentMatrix) {
+    const local = localMatrix(el);
+    const m = mul(parentMatrix, local);
+    for (const child of el.children) {
+      if (!(child instanceof SVGGraphicsElement)) continue;
+      const tag = child.tagName;
+      if (tag === 'g' || tag === 'svg' || tag === 'defs' || tag === 'a') {
+        walk(child, m);
+        continue;
+      }
+      let b;
+      try { b = child.getBBox({ stroke: true, fill: true, markers: true }); }
+      catch (_) { try { b = child.getBBox(); } catch (__) { b = null; } }
+      if (!b || (b.width === 0 && b.height === 0)) continue;
+      const childLocal = localMatrix(child);
+      const full = mul(m, childLocal);
+      const pts = [
+        apply(full, b.x, b.y),
+        apply(full, b.x + b.width, b.y),
+        apply(full, b.x, b.y + b.height),
+        apply(full, b.x + b.width, b.y + b.height),
+      ];
+      for (const p of pts) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+  }
+  walk(root, { a:1, b:0, c:0, d:1, e:0, f:0 });
+  if (!isFinite(minX)) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
 function buildBoardSvgBlob() {
   const board = document.getElementById('board');
   if (!board) throw new Error('no board');
@@ -167,13 +234,16 @@ function buildBoardSvgBlob() {
   let bbox = null;
   let anchorX = null;
   try {
-    bbox = clone.getBBox();
+    // getBBox() on the root <svg> clips descendants to the svg's own viewport —
+    // a shape that was rotated/translated outside the live viewBox would be
+    // excluded. Walk descendants and union their bboxes ourselves.
+    bbox = unionDescendantBBox(clone);
     // Lock pyramid/pole to the horizontal centerline of the final image.
     for (const sel of ['#pyramid-layer', '#pole-layer']) {
       const layer = clone.querySelector(sel);
       if (!layer || !layer.childNodes.length) continue;
-      const lb = layer.getBBox();
-      if (lb.width > 0 || lb.height > 0) {
+      const lb = unionDescendantBBox(layer);
+      if (lb && (lb.width > 0 || lb.height > 0)) {
         anchorX = lb.x + lb.width / 2;
         break;
       }
@@ -183,7 +253,10 @@ function buildBoardSvgBlob() {
   document.body.removeChild(host);
 
   if (bbox && bbox.width > 0 && bbox.height > 0) {
-    const pad = Math.max(bbox.width, bbox.height) * 0.05;
+    // CSS drop-shadow filters used by .shape-outline / handles spread up to ~12 user
+    // units beyond the geometric bbox, which getBBox({stroke:true}) still doesn't
+    // account for. Floor the pad so the glow never touches the viewport edge.
+    const pad = Math.max(Math.max(bbox.width, bbox.height) * 0.05, 40);
     let x;
     if (anchorX !== null) {
       const half = Math.max(anchorX - bbox.x, bbox.x + bbox.width - anchorX) + pad;
