@@ -547,4 +547,36 @@ window.addEventListener('popstate', () => {
     e.preventDefault();
     handleFile(dt.files[0]);
   });
+
+  // A drop-* hash can only reach another visitor through the share image's URL,
+  // since dropped shapes live only in the session that produced them. Replace
+  // the seeded random shape with the site favicon so the page isn't visually
+  // broken for the recipient.
+  (async function rehydrateDropHash() {
+    if (state.daily || !isDropped()) return;
+    try {
+      const resp = await fetch('favicon.svg');
+      if (!resp.ok) return;
+      const blob = await resp.blob();
+      const url = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result);
+        fr.onerror = () => rej(fr.error);
+        fr.readAsDataURL(blob);
+      });
+      const img = new Image();
+      img.decoding = 'async';
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+      const built = buildShapeFromImage(img);
+      if (!built) return;
+      state.shape = built.shape;
+      state.shapeImage = { placement: built.placement, href: url };
+      state.locked = false;
+      resetAllModes();
+      renderShape(state.shape);
+      modeRunner[state.mode].onShapeReady();
+      dom.newBtn.classList.remove('pulse');
+      updateActionButton();
+    } catch (e) { /* fall back to the random shape already on screen */ }
+  })();
 })();
