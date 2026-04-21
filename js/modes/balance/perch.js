@@ -19,6 +19,7 @@ const perchState = {
   pivot: null,
   tx: 0, ty: 0, theta: 0,
   confirmed: false,
+  touched: false,
   drag: null,
   animFrame: 0,
 };
@@ -29,6 +30,7 @@ const perchReset = makeModeReset({
     pivot: null,
     tx: 0, ty: 0, theta: 0,
     confirmed: false,
+    touched: false,
     drag: null,
   }),
   layers: [
@@ -264,6 +266,7 @@ function onShapePointerDown(e) {
   };
   try { dom.svg.setPointerCapture(e.pointerId); } catch (_) {}
   dom.shapeLayer.firstElementChild?.classList.add('dragging');
+  if (!perchState.touched) { perchState.touched = true; updateActionButton(); }
   e.stopPropagation();
   e.preventDefault();
 }
@@ -281,6 +284,7 @@ function onHandlePointerDown(e) {
   try { dom.svg.setPointerCapture(e.pointerId); } catch (_) {}
   e.currentTarget.classList.add('dragging');
   updateHandlePos();
+  if (!perchState.touched) { perchState.touched = true; updateActionButton(); }
   e.stopPropagation();
   e.preventDefault();
 }

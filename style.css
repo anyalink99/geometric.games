@@ -693,10 +693,10 @@ body[data-mode="balance"][data-balance-variation="perch"]    .help-balance-perch
   fill: none;
   pointer-events: none;
 }
-body[data-balance-variation="perch"] #shape-layer .shape-fill { pointer-events: fill; }
-body[data-balance-variation="perch"] #shape-layer > g { cursor: grab; touch-action: none; }
-body[data-balance-variation="perch"] #shape-layer > g.dragging { cursor: grabbing; }
-body[data-balance-variation="perch"] #shape-layer > g.locked { cursor: default; }
+body[data-mode="balance"][data-balance-variation="perch"] #shape-layer .shape-fill { pointer-events: fill; }
+body[data-mode="balance"][data-balance-variation="perch"] #shape-layer > g { cursor: grab; touch-action: none; }
+body[data-mode="balance"][data-balance-variation="perch"] #shape-layer > g.dragging { cursor: grabbing; }
+body[data-mode="balance"][data-balance-variation="perch"] #shape-layer > g.locked { cursor: default; }
 
 .modal-back.closing { display: flex; }
 .modal-back.closing .modal { animation: fadeScaleOut 0.22s var(--s-curve) forwards; }

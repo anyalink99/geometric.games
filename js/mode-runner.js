@@ -69,7 +69,7 @@ const modeRunner = {
     hasPendingConfirm() {
       const v = balanceVariation();
       if (v === 'pole') return !poleState.confirmed && poleState.pole != null;
-      if (v === 'perch') return !perchState.confirmed;
+      if (v === 'perch') return !perchState.confirmed && perchState.touched;
       return !centroidState.confirmed && centroidState.guess != null;
     },
   }),

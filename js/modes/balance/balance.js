@@ -21,6 +21,8 @@ registerModeAPI('balance', {
       if (!perchResolve() || !perchHandleFits()) {
         perchState.tx = prevTx;
         perchState.ty = prevTy;
+      } else {
+        perchState.touched = true;
       }
       updateShapeTransform();
       updateHandlePos();
