@@ -377,11 +377,13 @@ function perchRestoreSnapshot(snap) {
   updateHandlePos();
 }
 
-function showPerchVerdict(absDx, tipped) {
+function showPerchVerdict(dx, tipped) {
   const cls = tipped ? 'fair' : 'perfect';
+  const side = dx < 0 ? 'left' : 'right';
+  const amount = Math.abs(dx).toFixed(1);
   const text = tipped
-    ? `Tipped — off by ${absDx.toFixed(1)}`
-    : `Balanced — off by ${absDx.toFixed(1)}`;
+    ? `Tipped — off to the ${side} by ${amount}`
+    : `Balanced — off to the ${side} by ${amount}`;
   dom.scoreLine.innerHTML = `<div class="verdict ${cls}" id="verdict">${text}</div>`;
   const v = document.getElementById('verdict');
   v.getBoundingClientRect();
@@ -416,7 +418,8 @@ function confirmPerch(opts) {
 
   perchState.confirmed = true;
   const actual = shapeCentroid(bakedShape);
-  const absDx = Math.abs(actual.x - TIP_PT.x);
+  const dx = actual.x - TIP_PT.x;
+  const absDx = Math.abs(dx);
   const tipped = absDx > BALANCE_PERFECT_THRESHOLD;
 
   if (!replay) {
@@ -432,7 +435,7 @@ function confirmPerch(opts) {
     });
   }
 
-  showPerchVerdict(absDx, tipped);
+  showPerchVerdict(dx, tipped);
   state.locked = true;
   updateHandlePos();
   updateActionButton();
