@@ -1,0 +1,20 @@
+/* Aggregator for the split stylesheet. Import order mirrors the original
+   single-file cascade — edit the fragments, not this file. */
+@import url('base.css');
+@import url('layout.css');
+@import url('stage.css');
+@import url('shape.css');
+@import url('cut.css');
+@import url('cut-onboarding.css');
+@import url('pieces-labels.css');
+@import url('score.css');
+@import url('buttons.css');
+@import url('modal.css');
+@import url('help-modal.css');
+@import url('math-note.css');
+@import url('toast.css');
+@import url('share-modal.css');
+@import url('inscribe.css');
+@import url('puzzle-modal.css');
+@import url('balance.css');
+@import url('blog.css');

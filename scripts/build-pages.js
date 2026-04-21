@@ -489,7 +489,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </script>
 <!-- End Google Analytics 4 -->
 ${initialState}
-<link rel="stylesheet" href="${rel}style.css">
+<link rel="stylesheet" href="${rel}css/index.css">
 </head>
 <body data-mode="${p.mode}" data-cut-variation="${p.mode === 'cut' ? p.variation : 'half'}" data-inscribe-variation="${p.mode === 'inscribe' ? p.variation : 'square'}" data-balance-variation="${p.mode === 'balance' ? p.variation : 'pole'}">
 <!-- Google Tag Manager (noscript) -->
@@ -968,7 +968,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-N9CPH9MB');</script>
 <!-- End Google Tag Manager -->
-<link rel="stylesheet" href="${rel}style.css">
+<link rel="stylesheet" href="${rel}css/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
@@ -1065,7 +1065,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-N9CPH9MB');</script>
 <!-- End Google Tag Manager -->
-<link rel="stylesheet" href="${rel}style.css">
+<link rel="stylesheet" href="${rel}css/index.css">
 </head>
 <body class="blog-body">
 <!-- Google Tag Manager (noscript) -->
