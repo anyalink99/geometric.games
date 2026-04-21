@@ -209,20 +209,7 @@ function showCutVerdict(off, mainText, subText) {
   else if (off < 2) cls = 'great';
   else if (off < 5) cls = 'good';
   else cls = 'fair';
-  const sub = subText ? `<div class="score-stats" id="sstats">${subText}</div>` : '';
-  dom.scoreLine.innerHTML = `
-    <div class="verdict ${cls}" id="verdict">${mainText}</div>
-    ${sub}
-  `;
-  const v = document.getElementById('verdict');
-  const s = document.getElementById('sstats');
-  v.getBoundingClientRect();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      v.classList.add('show');
-      if (s) s.classList.add('show');
-    });
-  });
+  showVerdict(cls, mainText, subText);
 }
 
 function updateCutCursor(overHandle) {

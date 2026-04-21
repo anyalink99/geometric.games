@@ -426,32 +426,12 @@ function showInscribeVerdict(res, N) {
   const main = res.score >= 99.95
     ? `Perfect ${label.toLowerCase()}!`
     : `${label}: ${res.score.toFixed(1)}%`;
-  const sizeLine = N === 3
-    ? `<div class="score-stats" id="sstats3">size ${(res.sizeRatio * 100).toFixed(1)}% of max</div>`
-    : '';
-  dom.scoreLine.innerHTML = `
-    <div class="verdict ${cls}" id="verdict">${main}</div>
-    <div class="score-stats" id="sstats">
-      sides ${(res.sideRatio * 100).toFixed(1)}% even
-    </div>
-    <div class="score-stats" id="sstats2">
-      worst angle ${res.worstAngle.toFixed(1)}°
-    </div>
-    ${sizeLine}
-  `;
-  const v = document.getElementById('verdict');
-  const s = document.getElementById('sstats');
-  const s2 = document.getElementById('sstats2');
-  const s3 = document.getElementById('sstats3');
-  v.getBoundingClientRect();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      v.classList.add('show');
-      s.classList.add('show');
-      s2.classList.add('show');
-      if (s3) s3.classList.add('show');
-    });
-  });
+  const subs = [
+    `sides ${(res.sideRatio * 100).toFixed(1)}% even`,
+    `worst angle ${res.worstAngle.toFixed(1)}°`,
+  ];
+  if (N === 3) subs.push(`size ${(res.sizeRatio * 100).toFixed(1)}% of max`);
+  showVerdict(cls, main, subs);
 }
 
 function computeInscribedSync(outer, N) {

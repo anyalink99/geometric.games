@@ -403,12 +403,7 @@ function showPerchVerdict(dx, tipped) {
   if (tipped) text = `Tipped — off to the ${side} by ${amount}`;
   else if (abs < 0.05) text = 'Perfect balance!';
   else text = `Balanced — off to the ${side} by ${amount}`;
-  dom.scoreLine.innerHTML = `<div class="verdict ${cls}" id="verdict">${text}</div>`;
-  const v = document.getElementById('verdict');
-  v.getBoundingClientRect();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => v.classList.add('show'));
-  });
+  showVerdict(cls, text);
 }
 
 function confirmPerch(opts) {

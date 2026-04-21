@@ -121,14 +121,7 @@ function showCentroidVerdict(dist) {
   else if (dist <= 35) cls = 'good';
   else                 cls = 'fair';
   const text = dist < 0.05 ? 'Perfect centroid!' : `Off by ${dist.toFixed(1)}`;
-  dom.scoreLine.innerHTML = `
-    <div class="verdict ${cls}" id="verdict">${text}</div>
-  `;
-  const v = document.getElementById('verdict');
-  v.getBoundingClientRect();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => v.classList.add('show'));
-  });
+  showVerdict(cls, text);
 }
 
 function centroidSnapshot() {

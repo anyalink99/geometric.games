@@ -315,7 +315,11 @@
   (async function rehydrateDropHash() {
     if (state.daily || !isDropped()) return;
     try {
-      const resp = await fetch('favicon.svg');
+      // Relative path resolves against the current directory — so /cut/ratio/
+      // (and every other non-root page) would try /cut/ratio/favicon.svg and 404.
+      // __ASSET_BASE is the per-page "../" prefix baked in by scripts/build-pages.js.
+      const base = (typeof window !== 'undefined' && window.__ASSET_BASE) || '';
+      const resp = await fetch(base + 'favicon.svg');
       if (!resp.ok) return;
       const blob = await resp.blob();
       const url = await new Promise((res, rej) => {

@@ -573,6 +573,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/ui/modals.js"></script>
 <script src="${rel}js/ui/render.js"></script>
 <script src="${rel}js/ui/keyboard.js"></script>
+<script src="${rel}js/ui/puzzle-modal.js"></script>
 <script src="${rel}js/modes/cut/geometry.js"></script>
 <script src="${rel}js/modes/cut/render.js"></script>
 <script src="${rel}js/modes/cut/cut.js"></script>

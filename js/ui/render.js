@@ -71,3 +71,25 @@ function renderShape(shape) {
   clearLayers();
   dom.shapeLayer.appendChild(makeShapeGroup(shape, 'shape-group'));
 }
+
+// Replaces the score-line content with a verdict + optional stat lines, then
+// double-RAFs a 'show' class so CSS can fade them in. Double-RAF forces a
+// layout pass between paint and class-add, otherwise the transition collapses
+// to a single frame (the pre-show state is never observed). Called on confirm
+// by every mode — shared here so one reveal rhythm applies everywhere.
+function showVerdict(cls, text, subs) {
+  const subList = Array.isArray(subs) ? subs.filter(Boolean) : (subs ? [subs] : []);
+  const subsHtml = subList
+    .map(s => `<div class="score-stats">${s}</div>`)
+    .join('');
+  dom.scoreLine.innerHTML = `<div class="verdict ${cls}">${text}</div>${subsHtml}`;
+  const verdictEl = dom.scoreLine.querySelector('.verdict');
+  const statEls = dom.scoreLine.querySelectorAll('.score-stats');
+  verdictEl.getBoundingClientRect();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      verdictEl.classList.add('show');
+      for (const el of statEls) el.classList.add('show');
+    });
+  });
+}
