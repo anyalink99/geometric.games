@@ -3,7 +3,6 @@ function balanceVariation() {
 }
 
 registerModeAPI('balance', {
-  pickShape() { return generateBalanceShape(); },
   nudge(dx, dy) {
     const v = balanceVariation();
     if (v === 'pole') {

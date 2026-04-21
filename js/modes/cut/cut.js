@@ -22,13 +22,6 @@ function cutRequiredCount() {
   return (v === 'quad' || v === 'tri') ? 2 : 1;
 }
 
-registerModeAPI('cut', {
-  pickShape() {
-    if (Math.random() < 0.15) return generateBalanceShape();
-    return generateShape();
-  },
-});
-
 const cutReset = makeModeReset({
   state: cutState,
   defaults: {

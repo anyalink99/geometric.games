@@ -44,11 +44,8 @@ function updateActionButton() {
   if (shareBtn) shareBtn.hidden = !state.locked;
 }
 
-// Single-shot: on failure drop straight to the plain generator; no retries.
 function generateShapeForMode() {
-  const api = MODE_REGISTRY[state.mode] && MODE_REGISTRY[state.mode].api;
-  if (api && api.pickShape) return api.pickShape();
-  return generateShape();
+  return pickShapeFor(state.mode);
 }
 
 function resetAllModes() {

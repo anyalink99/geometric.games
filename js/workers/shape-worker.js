@@ -8,25 +8,8 @@ importScripts(
   '../geometry/shape-outer.js',
   '../geometry/shape-holes.js',
   '../geometry/shapes.js',
+  '../geometry/shape-picker.js',
 );
-
-// Must match each mode's pickShape() exactly — identical Math.random() consumption
-// under the same seed produces identical shapes, preserving daily-hash determinism.
-function pickShapeFor(mode) {
-  if (mode === 'cut') {
-    if (Math.random() < 0.15) return generateBalanceShape();
-    return generateShape();
-  }
-  if (mode === 'inscribe') {
-    if (Math.random() < 0.25) {
-      const bal = generateInscribeBalanceShape();
-      if (bal) return bal;
-    }
-    return generateShape({ noHoles: true, noSymmetry: true });
-  }
-  if (mode === 'balance') return generateBalanceShape();
-  return generateShape();
-}
 
 onmessage = (e) => {
   const d = e.data;

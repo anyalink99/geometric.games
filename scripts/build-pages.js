@@ -569,6 +569,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/geometry/shape-outer.js"></script>
 <script src="${rel}js/geometry/shape-holes.js"></script>
 <script src="${rel}js/geometry/shapes.js"></script>
+<script src="${rel}js/geometry/shape-picker.js"></script>
 <script src="${rel}js/ui/modals.js"></script>
 <script src="${rel}js/ui/render.js"></script>
 <script src="${rel}js/ui/keyboard.js"></script>
@@ -581,6 +582,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/modes/inscribe/inscribe.js"></script>
 <script src="${rel}js/modes/inscribe/input.js"></script>
 <script src="${rel}js/modes/inscribe/stats.js"></script>
+<script src="${rel}js/modes/balance/physics.js"></script>
 <script src="${rel}js/modes/balance/centroid.js"></script>
 <script src="${rel}js/modes/balance/pole.js"></script>
 <script src="${rel}js/modes/balance/perch.js"></script>
@@ -599,6 +601,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/share/gif.js"></script>
 <script src="${rel}js/core/game.js"></script>
 <script src="${rel}js/main.js"></script>
+<script src="${rel}js/drop-shape.js"></script>
 </body>
 </html>
 `;

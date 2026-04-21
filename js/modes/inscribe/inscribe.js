@@ -19,13 +19,6 @@ function inscribeVariation() {
 }
 
 registerModeAPI('inscribe', {
-  pickShape() {
-    if (Math.random() < 0.25) {
-      const bal = generateInscribeBalanceShape();
-      if (bal) return bal;
-    }
-    return generateShape({ noHoles: true, noSymmetry: true });
-  },
   nudge(dx, dy) {
     if (inscribeState.confirmed) return;
     if (!inscribeState.points.length) return;
