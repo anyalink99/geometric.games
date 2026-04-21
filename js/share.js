@@ -128,18 +128,63 @@ function buildBoardSvgBlob() {
   if (!board) throw new Error('no board');
   const clone = board.cloneNode(true);
 
+  // Inline styles FIRST — origList/cloneList are walked by index, so clone must still be
+  // structurally identical to the original at this point. Strip non-visual elements after.
+  inlineSvgStyles(board, clone);
+
   const preview = clone.querySelector('#cut-preview');
   if (preview) preview.remove();
+  // hit-pad spans the full viewBox and would dominate getBBox(); it's not visual, drop it.
+  const hitPad = clone.querySelector('#hit-pad');
+  if (hitPad) hitPad.remove();
   clone.querySelectorAll('.sp-hover, .centroid-hover, .pole-hover').forEach(el => el.remove());
-
-  inlineSvgStyles(board, clone);
 
   // cloneNode on HTML-doc SVG elements doesn't always set xmlns; Image() needs explicit dims.
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-  const vb = (clone.getAttribute('viewBox') || '0 0 520 560').split(/\s+/).map(Number);
-  const vbW = vb[2] || 520;
-  const vbH = vb[3] || 560;
+
+  // Tighten viewBox to the actual content bbox so the shared image scales the result up
+  // to fill the available canvas area. getBBox() needs the element rendered — attach off-screen.
+  const vbRaw = (clone.getAttribute('viewBox') || '0 0 520 560').split(/\s+/).map(Number);
+  let vbW = vbRaw[2] || 520;
+  let vbH = vbRaw[3] || 560;
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:-99999px;top:0;width:0;height:0;overflow:hidden;pointer-events:none;';
+  document.body.appendChild(host);
+  host.appendChild(clone);
+  let bbox = null;
+  let anchorX = null;
+  try {
+    bbox = clone.getBBox();
+    // Lock pyramid/pole to the horizontal centerline of the final image.
+    for (const sel of ['#pyramid-layer', '#pole-layer']) {
+      const layer = clone.querySelector(sel);
+      if (!layer || !layer.childNodes.length) continue;
+      const lb = layer.getBBox();
+      if (lb.width > 0 || lb.height > 0) {
+        anchorX = lb.x + lb.width / 2;
+        break;
+      }
+    }
+  } catch (e) { bbox = null; }
+  host.removeChild(clone);
+  document.body.removeChild(host);
+
+  if (bbox && bbox.width > 0 && bbox.height > 0) {
+    const pad = Math.max(bbox.width, bbox.height) * 0.05;
+    let x;
+    if (anchorX !== null) {
+      const half = Math.max(anchorX - bbox.x, bbox.x + bbox.width - anchorX) + pad;
+      x = anchorX - half;
+      vbW = half * 2;
+    } else {
+      x = bbox.x - pad;
+      vbW = bbox.width + pad * 2;
+    }
+    const y = bbox.y - pad;
+    vbH = bbox.height + pad * 2;
+    clone.setAttribute('viewBox', `${x} ${y} ${vbW} ${vbH}`);
+  }
   clone.setAttribute('width', vbW);
   clone.setAttribute('height', vbH);
 
@@ -202,10 +247,17 @@ async function buildSharePng() {
   ctx.fillStyle = '#9ca3af';
   ctx.fillText(shareLabel(), size / 2, brandY + 54);
 
-  const boardTop = 200;
-  const boardBottom = 820;
+  const qrMatrix = buildQrMatrix(sharePuzzleUrl());
+  const qrSize = qrMatrix ? 180 : 0;
+  const qrPad = 30;
+  const qrX = size - qrSize - qrPad;
+  const qrY = qrPad;
+  if (qrMatrix) drawQrOnCanvas(ctx, qrMatrix, qrX, qrY, qrSize);
+
+  const boardTop = 180;
+  const boardBottom = 860;
   const boardAvailH = boardBottom - boardTop;
-  const boardAvailW = size - 120;
+  const boardAvailW = size - 80;
   const scale = Math.min(boardAvailW / vbW, boardAvailH / vbH);
   const boardW = vbW * scale;
   const boardH = vbH * scale;
@@ -217,32 +269,21 @@ async function buildSharePng() {
   if (verdict) {
     ctx.font = '900 44px ui-sans-serif, system-ui, sans-serif';
     ctx.fillStyle = '#c084fc';
-    ctx.fillText(verdict, size / 2, 900);
+    ctx.fillText(verdict, size / 2, 905);
   }
   if (stats) {
     ctx.font = '600 24px ui-monospace, SFMono-Regular, Menlo, Monaco, monospace';
     ctx.fillStyle = '#d1d5db';
-    ctx.fillText(stats, size / 2, 946);
+    ctx.fillText(stats, size / 2, 950);
   }
 
-  const qrMatrix = buildQrMatrix(sharePuzzleUrl());
-  const qrSize = qrMatrix ? 180 : 0;
-  const qrPad = 30;
-  const qrX = size - qrSize - qrPad;
-  const qrY = size - qrSize - qrPad;
-  if (qrMatrix) drawQrOnCanvas(ctx, qrMatrix, qrX, qrY, qrSize);
-
-  ctx.textAlign = qrMatrix ? 'left' : 'center';
   ctx.font = '700 26px ui-sans-serif, system-ui, sans-serif';
   ctx.fillStyle = '#e5e7eb';
-  const ctaX = qrMatrix ? qrPad : size / 2;
-  ctx.fillText('Play this puzzle →', ctaX, size - 90);
+  ctx.fillText('Play this puzzle →', size / 2, size - 86);
 
   ctx.font = '600 20px ui-monospace, SFMono-Regular, Menlo, Monaco, monospace';
   ctx.fillStyle = '#9ca3af';
-  const urlLine = shareDisplayUrl();
-  ctx.fillText(urlLine, ctaX, size - 54);
-  ctx.textAlign = 'center';
+  ctx.fillText(shareDisplayUrl(), size / 2, size - 50);
 
   return await new Promise((resolve, reject) => {
     canvas.toBlob(b => {
