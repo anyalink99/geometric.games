@@ -90,6 +90,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <desc id="board-desc">An irregular shape on a grid. Drag or tap to place your answer. The hint below the board describes what to solve.</desc>
       <rect class="hit-pad" id="hit-pad" x="-60" y="-80" width="520" height="560"/>
       <g id="pole-layer"></g>
+      <g id="pyramid-layer"></g>
       <g id="shape-layer"></g>
       <g id="cut-layer"></g>
       <g id="cut-lines-layer"></g>
@@ -101,6 +102,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <g id="centroid-ideal-layer"></g>
       <g id="centroid-point-layer"></g>
       <g id="balance-hover-layer"></g>
+      <g id="handle-layer"></g>
       <g id="label-layer"></g>
       <line id="cut-preview" class="cut-line preview" style="display:none"/>
     </svg>
@@ -129,7 +131,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>Release to place the line; drag the endpoints to fine-tune</li>
             <li>Press <b>Confirm</b> to score the cut</li>
           </ul>
-          <p class="math-note"><b>Math:</b> by the Intermediate Value Theorem, every region has a 50/50 bisector in <i>every</i> direction — perfection is always reachable. <a class="math-more" href="../blog/cutting-polygons-in-half/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> by the Intermediate Value Theorem, every region has a 50/50 bisector in <i>every</i> direction — perfection is always reachable. <a class="math-more" href="/blog/cutting-polygons-in-half/">Read more →</a></p>
         </div>
         <div class="help-cut-ratio">
           <p>Cut in a <b>random target ratio</b> (5/95 … 50/50) shown up top each round.</p>
@@ -145,7 +147,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>Draw two lines, each fully crossing the shape</li>
             <li>Drag any endpoint to adjust, then <b>Confirm</b></li>
           </ul>
-          <p class="math-note"><b>Math:</b> Courant–Robbins theorem — any planar region can be split into 4 equal pieces by <i>two perpendicular</i> lines. Proof rotates two area-bisectors by 90° and uses IVT. <a class="math-more" href="../blog/courant-robbins-four-equal-pieces/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> Courant–Robbins theorem — any planar region can be split into 4 equal pieces by <i>two perpendicular</i> lines. Proof rotates two area-bisectors by 90° and uses IVT. <a class="math-more" href="/blog/courant-robbins-four-equal-pieces/">Read more →</a></p>
         </div>
         <div class="help-cut-tri">
           <p>Two cuts, but the second must stay in <b>one half</b> — three equal pieces.</p>
@@ -172,7 +174,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>Tap / click to drop — drag points any time to adjust</li>
             <li>After four points, press <b>Confirm</b> to score</li>
           </ul>
-          <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons, smooth curves, and piecewise-smooth curves like the ones here; for arbitrary Jordan curves it's still <i>open</i> after 110+ years. <a class="math-more" href="../blog/inscribed-square-problem/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> Toeplitz's Inscribed Square Problem (1911) — does every closed curve contain 4 points forming a square? Proven for polygons, smooth curves, and piecewise-smooth curves like the ones here; for arbitrary Jordan curves it's still <i>open</i> after 110+ years. <a class="math-more" href="/blog/inscribed-square-problem/">Read more →</a></p>
         </div>
         <div class="help-inscribe-triangle">
           <p>Place <b>three points</b> on the outline to form an equilateral triangle.</p>
@@ -181,7 +183,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>All three sides must be equal and every angle 60°</li>
             <li>After three points, press <b>Confirm</b> to score</li>
           </ul>
-          <p class="math-note"><b>Math:</b> every Jordan curve contains inscribed equilateral triangles — proven by Nielsen &amp; Wright (1990) and others. Unlike Toeplitz's square, the triangle case is fully settled. <a class="math-more" href="../blog/inscribed-equilateral-triangle/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> every Jordan curve contains inscribed equilateral triangles — proven by Nielsen &amp; Wright (1990) and others. Unlike Toeplitz's square, the triangle case is fully settled. <a class="math-more" href="/blog/inscribed-equilateral-triangle/">Read more →</a></p>
         </div>
       </div>
       <div class="help-balance">
@@ -192,7 +194,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>Tap anywhere on the board to drop your guess</li>
             <li>Drag the point to fine-tune, then press <b>Confirm</b></li>
           </ul>
-          <p class="math-note"><b>Math:</b> the centroid doesn't have to lie <i>inside</i> the shape — for an annulus it sits at the empty center. Non-convex outlines and holes are where intuition breaks. <a class="math-more" href="../blog/center-of-mass-with-holes/">Read more →</a></p>
+          <p class="math-note"><b>Math:</b> the centroid doesn't have to lie <i>inside</i> the shape — for an annulus it sits at the empty center. Non-convex outlines and holes are where intuition breaks. <a class="math-more" href="/blog/center-of-mass-with-holes/">Read more →</a></p>
         </div>
         <div class="help-balance-pole">
           <p>Slide a <b>pole</b> under the shape so it <b>balances</b>.</p>
@@ -201,6 +203,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <li>Drag to fine-tune, then press <b>Confirm</b></li>
           </ul>
           <p class="math-note"><b>Math:</b> only the horizontal offset between the pole and the centroid's X matters for tipping — it's an inverted pendulum whose torque is <i>m·g·Δx</i>.</p>
+        </div>
+        <div class="help-balance-perch">
+          <p>Place the shape on the pyramid <b>tip</b> so it <b>balances</b>.</p>
+          <ul>
+            <li>Drag the shape to translate, use the purple handle to rotate</li>
+            <li>The shape must touch the tip, then press <b>Confirm</b></li>
+          </ul>
+          <p class="math-note"><b>Math:</b> for any 2D shape there is always an orientation that balances on a single point — the Intermediate Value Theorem applied to the horizontal offset of the bottom point from the centroid as the shape rotates.</p>
         </div>
       </div>
       <div class="close-row"><button class="btn" id="close-help">Got it</button></div>
@@ -300,6 +310,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="mode-title">Centroid</div>
             <div class="mode-desc">Tap the board where you think the center of mass is.</div>
           </button>
+          <button class="var-card" data-var="perch">
+            <div class="mode-title">Perch Balance</div>
+            <div class="mode-desc">Drag and rotate the shape onto a pyramid tip so it balances.</div>
+          </button>
         </div>
       </div>
 
@@ -340,6 +354,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="../js/modes/inscribe/stats.js"></script>
 <script src="../js/modes/balance/centroid.js"></script>
 <script src="../js/modes/balance/pole.js"></script>
+<script src="../js/modes/balance/perch.js"></script>
 <script src="../js/modes/balance/balance.js"></script>
 <script src="../js/modes/balance/input.js"></script>
 <script src="../js/modes/balance/stats.js"></script>

@@ -44,6 +44,11 @@ const PAGE_META = {
     "path": "/balance/centroid/",
     "title": "Centroid guess — find the center of mass of a shape | geometric.games",
     "description": "Tap where you think the shape’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely."
+  },
+  "balance:perch": {
+    "path": "/balance/perch/",
+    "title": "Perch balance puzzle — balance a shape on a pyramid tip | geometric.games",
+    "description": "Drag and rotate an irregular shape onto the tip of a pyramid so it balances. A playable take on the Intermediate Value Theorem for rotations."
   }
 };
 

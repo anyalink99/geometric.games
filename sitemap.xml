@@ -46,6 +46,11 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://geometric.games/balance/perch/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://geometric.games/blog/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

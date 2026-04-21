@@ -115,6 +115,14 @@ const GAME_PAGES = [
     title: 'Centroid guess — find the center of mass of a shape | geometric.games',
     description: 'Tap where you think the shape’s centroid is. Holes in the shape shift it — in annuli the center of mass sits outside the shape entirely.',
   },
+  {
+    outPath: 'balance/perch/index.html',
+    canonicalPath: '/balance/perch/',
+    mode: 'balance',
+    variation: 'perch',
+    title: 'Perch balance puzzle — balance a shape on a pyramid tip | geometric.games',
+    description: 'Drag and rotate an irregular shape onto the tip of a pyramid so it balances. A playable take on the Intermediate Value Theorem for rotations.',
+  },
 ];
 
 const BLOG_POSTS = [
@@ -506,6 +514,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <desc id="board-desc">An irregular shape on a grid. Drag or tap to place your answer. The hint below the board describes what to solve.</desc>
       <rect class="hit-pad" id="hit-pad" x="-60" y="-80" width="520" height="560"/>
       <g id="pole-layer"></g>
+      <g id="pyramid-layer"></g>
       <g id="shape-layer"></g>
       <g id="cut-layer"></g>
       <g id="cut-lines-layer"></g>
@@ -517,6 +526,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <g id="centroid-ideal-layer"></g>
       <g id="centroid-point-layer"></g>
       <g id="balance-hover-layer"></g>
+      <g id="handle-layer"></g>
       <g id="label-layer"></g>
       <line id="cut-preview" class="cut-line preview" style="display:none"/>
     </svg>
@@ -571,6 +581,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/modes/inscribe/stats.js"></script>
 <script src="${rel}js/modes/balance/centroid.js"></script>
 <script src="${rel}js/modes/balance/pole.js"></script>
+<script src="${rel}js/modes/balance/perch.js"></script>
 <script src="${rel}js/modes/balance/balance.js"></script>
 <script src="${rel}js/modes/balance/input.js"></script>
 <script src="${rel}js/modes/balance/stats.js"></script>
@@ -584,14 +595,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </html>
 `;
 
-  // Rewrite root-absolute href="/..." to per-page relative form so help-modal
-  // blog links (and any future root-absolute links) work at every depth,
-  // including file:// direct opens. Leaves https://... (doesn't start with /)
-  // and src="/..." (handled via ${rel} template subs) alone.
-  return html.replace(/href="\/([^"]*)"/g, (_m, rest) => {
-    const dest = rel + rest;
-    return `href="${dest || './'}"`;
-  });
+  // Root-absolute href="/..." stays absolute so SPA pushState navigation
+  // doesn't break them (e.g. home -> /cut/quad/ via pushState would otherwise
+  // re-resolve a relative href against the new URL). Trade-off: file:// direct
+  // opens can't follow these links, which is accepted.
+  return html;
 }
 
 // ---------------------------------------------------------------------------
@@ -682,6 +690,14 @@ const HELP_MODAL = `<div class="modal-back" id="help-modal">
             <li>Drag to fine-tune, then press <b>Confirm</b></li>
           </ul>
           <p class="math-note"><b>Math:</b> only the horizontal offset between the pole and the centroid's X matters for tipping — it's an inverted pendulum whose torque is <i>m·g·Δx</i>.</p>
+        </div>
+        <div class="help-balance-perch">
+          <p>Place the shape on the pyramid <b>tip</b> so it <b>balances</b>.</p>
+          <ul>
+            <li>Drag the shape to translate, use the purple handle to rotate</li>
+            <li>The shape must touch the tip, then press <b>Confirm</b></li>
+          </ul>
+          <p class="math-note"><b>Math:</b> for any 2D shape there is always an orientation that balances on a single point — the Intermediate Value Theorem applied to the horizontal offset of the bottom point from the centroid as the shape rotates.</p>
         </div>
       </div>
       <div class="close-row"><button class="btn" id="close-help">Got it</button></div>
@@ -782,6 +798,10 @@ const PUZZLE_MODAL = `<div class="modal-back" id="puzzle-modal">
           <button class="var-card" data-var="centroid">
             <div class="mode-title">Centroid</div>
             <div class="mode-desc">Tap the board where you think the center of mass is.</div>
+          </button>
+          <button class="var-card" data-var="perch">
+            <div class="mode-title">Perch Balance</div>
+            <div class="mode-desc">Drag and rotate the shape onto a pyramid tip so it balances.</div>
           </button>
         </div>
       </div>

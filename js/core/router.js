@@ -60,6 +60,20 @@ function canPushState() {
   return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
 
+// Bake relative icon/manifest hrefs to absolute paths before any pushState can
+// move the URL. Otherwise Chrome re-resolves them against the new pathname and
+// 404s on e.g. /balance/perch/favicon.svg. Skipped on file:// where absolute
+// paths don't resolve anyway.
+(function lockAssetLinksOnce() {
+  if (!canPushState()) return;
+  const sel = 'link[rel~="icon"], link[rel="mask-icon"], link[rel="apple-touch-icon"], link[rel="manifest"]';
+  document.querySelectorAll(sel).forEach(el => {
+    const href = el.getAttribute('href');
+    if (!href || /^(?:[a-z]+:)?\/\//i.test(href) || href.startsWith('/')) return;
+    try { el.setAttribute('href', new URL(href, document.baseURI).pathname); } catch (_) {}
+  });
+})();
+
 function pushRoute(mode, variation, hash, daily) {
   if (canPushState()) {
     const url = buildRouteUrl(mode, variation, hash, daily);
