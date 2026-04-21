@@ -187,7 +187,10 @@ function perchComputeHandlePos() {
   const wc = perchWorldPivot();
   const R = perchShapeBoundingRadius() + HANDLE_GAP;
   const pad = perchHandleR() + 7;
-  const dirs = [[0, -1], [1, 0], [-1, 0], [0, 1]];
+  const baseDirs = [[0, -1], [1, 0], [-1, 0], [0, 1]];
+  const a = 10 * Math.PI / 180;
+  const ca = Math.cos(a), sa = Math.sin(a);
+  const dirs = baseDirs.map(([x, y]) => [x * ca - y * sa, x * sa + y * ca]);
   for (const [dx, dy] of dirs) {
     const hx = wc.x + dx * R, hy = wc.y + dy * R;
     if (hx >= PERCH_VIEW.x0 + pad && hx <= PERCH_VIEW.x1 - pad &&
