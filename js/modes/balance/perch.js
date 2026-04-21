@@ -11,6 +11,7 @@ const PYR_EDGES = [
 const PERCH_VIEW  = { x0: -60, y0: -80, x1: 460, y1: 480 };
 const PERCH_VIEW_PAD = 2;
 const TIP_TOUCH_EPS = 0.6;
+const TIP_SNAP_DIST = 7;
 const HANDLE_R = 11;
 const HANDLE_GAP = 22;
 function perchHandleR() { return isCoarsePointer() ? HANDLE_R * 2 : HANDLE_R; }
@@ -159,6 +160,19 @@ function perchResolve() {
   return false;
 }
 
+function trySnapToTip() {
+  const outerW = perchWorldOuter();
+  if (perchPointInPoly(TIP_PT, outerW)) return;
+  const nb = perchNearestBoundary(TIP_PT, outerW);
+  if (nb.d <= TIP_TOUCH_EPS || nb.d > TIP_SNAP_DIST) return;
+  const saveTx = perchState.tx, saveTy = perchState.ty;
+  perchState.tx += (TIP_PT.x - nb.cx);
+  perchState.ty += (TIP_PT.y - nb.cy);
+  if (perchResolve() && perchHandleFits() && isTouchingTip()) return;
+  perchState.tx = saveTx;
+  perchState.ty = saveTy;
+}
+
 function perchShapeBoundingRadius() {
   let br = 0;
   for (const p of state.shape.outer) {
@@ -304,6 +318,8 @@ function onPerchPointerMove(e) {
     if (!perchResolve() || !perchHandleFits()) {
       perchState.tx = prevTx;
       perchState.ty = prevTy;
+    } else {
+      trySnapToTip();
     }
   } else {
     const wc = perchWorldPivot();
