@@ -575,6 +575,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/modes/cut/geometry.js"></script>
 <script src="${rel}js/modes/cut/render.js"></script>
 <script src="${rel}js/modes/cut/cut.js"></script>
+<script src="${rel}js/modes/cut/onboarding.js"></script>
 <script src="${rel}js/modes/cut/input.js"></script>
 <script src="${rel}js/modes/cut/stats.js"></script>
 <script src="${rel}js/modes/inscribe/inscribe.js"></script>
@@ -589,7 +590,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/stats.js"></script>
 <script src="${rel}js/mode-runner.js"></script>
 <script src="${rel}js/vendor/qrcode.min.js"></script>
-<script src="${rel}js/share.js"></script>
+<script src="${rel}js/vendor/gif-encoder.js"></script>
+<script src="${rel}js/share/base.js"></script>
+<script src="${rel}js/share/quantize.js"></script>
+<script src="${rel}js/share/modal.js"></script>
+<script src="${rel}js/share/capture.js"></script>
+<script src="${rel}js/share/compose.js"></script>
+<script src="${rel}js/share/gif.js"></script>
 <script src="${rel}js/game.js"></script>
 <script src="${rel}js/main.js"></script>
 </body>

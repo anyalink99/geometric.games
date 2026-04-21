@@ -117,13 +117,14 @@ function inlineSvgStyles(originalRoot, cloneRoot) {
       }
     }
     if (decls) cln.setAttribute('style', decls);
-    // Bake CSS transform (used by Cut to fan pieces apart) into the SVG transform
-    // attribute — setAttribute('style', ...) above drops it, and CSS transforms on
-    // SVG elements aren't honored consistently when rendering via Image().
-    const tf = cs.transform;
-    if (tf && tf !== 'none') {
-      const existing = cln.getAttribute('transform');
-      cln.setAttribute('transform', existing ? `${existing} ${tf}` : tf);
+    // Bake CSS transform (used by Cut to fan pieces apart) into the SVG
+    // transform attribute so Image() rendering picks it up. Skip if an SVG
+    // transform attribute is already present — Chrome includes those in
+    // getComputedStyle(...).transform, so writing again would double the
+    // transform (breaks balance/perch and balance/pole physics framing).
+    if (!cln.hasAttribute('transform')) {
+      const tf = cs.transform;
+      if (tf && tf !== 'none') cln.setAttribute('transform', tf);
     }
   }
   for (const el of toRemove) {
@@ -198,7 +199,58 @@ function unionDescendantBBox(root) {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-function buildBoardSvgBlob() {
+// Compute a tight viewBox (and, for balance modes, horizontally-centered on
+// the pyramid/pole) by measuring a detached, fully-inlined clone of `srcSvg`.
+// Returns { x, y, w, h } or null if bbox couldn't be derived.
+function computeBoardViewBox(srcSvg) {
+  const clone = srcSvg.cloneNode(true);
+  clone.setAttribute('overflow', 'visible');
+  inlineSvgStyles(srcSvg, clone);
+  const preview = clone.querySelector('#cut-preview');
+  if (preview) preview.remove();
+  const hitPad = clone.querySelector('#hit-pad');
+  if (hitPad) hitPad.remove();
+  clone.querySelectorAll('.sp-hover, .centroid-hover, .pole-hover').forEach(el => el.remove());
+
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:-99999px;top:0;width:0;height:0;overflow:hidden;pointer-events:none;';
+  document.body.appendChild(host);
+  host.appendChild(clone);
+  let bbox = null;
+  let anchorX = null;
+  try {
+    bbox = unionDescendantBBox(clone);
+    for (const sel of ['#pyramid-layer', '#pole-layer']) {
+      const layer = clone.querySelector(sel);
+      if (!layer || !layer.childNodes.length) continue;
+      const lb = unionDescendantBBox(layer);
+      if (lb && (lb.width > 0 || lb.height > 0)) {
+        anchorX = lb.x + lb.width / 2;
+        break;
+      }
+    }
+  } catch (e) { bbox = null; }
+  host.removeChild(clone);
+  document.body.removeChild(host);
+
+  if (!bbox || bbox.width <= 0 || bbox.height <= 0) return null;
+  // CSS drop-shadow filters used by .shape-outline / handles spread up to ~12 user
+  // units beyond the geometric bbox, which getBBox({stroke:true}) still doesn't
+  // account for. Floor the pad so the glow never touches the viewport edge.
+  const pad = Math.max(Math.max(bbox.width, bbox.height) * 0.05, 40);
+  let x, w;
+  if (anchorX !== null) {
+    const half = Math.max(anchorX - bbox.x, bbox.x + bbox.width - anchorX) + pad;
+    x = anchorX - half;
+    w = half * 2;
+  } else {
+    x = bbox.x - pad;
+    w = bbox.width + pad * 2;
+  }
+  return { x, y: bbox.y - pad, w, h: bbox.height + pad * 2 };
+}
+
+function buildBoardSvgBlob(predefinedViewBox) {
   const board = document.getElementById('board');
   if (!board) throw new Error('no board');
   const clone = board.cloneNode(true);
@@ -222,53 +274,14 @@ function buildBoardSvgBlob() {
   clone.setAttribute('overflow', 'visible');
   clone.style.overflow = 'visible';
 
-  // Tighten viewBox to the actual content bbox so the shared image scales the result up
-  // to fill the available canvas area. getBBox() needs the element rendered — attach off-screen.
   const vbRaw = (clone.getAttribute('viewBox') || '0 0 520 560').split(/\s+/).map(Number);
   let vbW = vbRaw[2] || 520;
   let vbH = vbRaw[3] || 560;
-  const host = document.createElement('div');
-  host.style.cssText = 'position:absolute;left:-99999px;top:0;width:0;height:0;overflow:hidden;pointer-events:none;';
-  document.body.appendChild(host);
-  host.appendChild(clone);
-  let bbox = null;
-  let anchorX = null;
-  try {
-    // getBBox() on the root <svg> clips descendants to the svg's own viewport —
-    // a shape that was rotated/translated outside the live viewBox would be
-    // excluded. Walk descendants and union their bboxes ourselves.
-    bbox = unionDescendantBBox(clone);
-    // Lock pyramid/pole to the horizontal centerline of the final image.
-    for (const sel of ['#pyramid-layer', '#pole-layer']) {
-      const layer = clone.querySelector(sel);
-      if (!layer || !layer.childNodes.length) continue;
-      const lb = unionDescendantBBox(layer);
-      if (lb && (lb.width > 0 || lb.height > 0)) {
-        anchorX = lb.x + lb.width / 2;
-        break;
-      }
-    }
-  } catch (e) { bbox = null; }
-  host.removeChild(clone);
-  document.body.removeChild(host);
-
-  if (bbox && bbox.width > 0 && bbox.height > 0) {
-    // CSS drop-shadow filters used by .shape-outline / handles spread up to ~12 user
-    // units beyond the geometric bbox, which getBBox({stroke:true}) still doesn't
-    // account for. Floor the pad so the glow never touches the viewport edge.
-    const pad = Math.max(Math.max(bbox.width, bbox.height) * 0.05, 40);
-    let x;
-    if (anchorX !== null) {
-      const half = Math.max(anchorX - bbox.x, bbox.x + bbox.width - anchorX) + pad;
-      x = anchorX - half;
-      vbW = half * 2;
-    } else {
-      x = bbox.x - pad;
-      vbW = bbox.width + pad * 2;
-    }
-    const y = bbox.y - pad;
-    vbH = bbox.height + pad * 2;
-    clone.setAttribute('viewBox', `${x} ${y} ${vbW} ${vbH}`);
+  const vb = predefinedViewBox || computeBoardViewBox(board);
+  if (vb) {
+    clone.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    vbW = vb.w;
+    vbH = vb.h;
   }
   clone.setAttribute('width', vbW);
   clone.setAttribute('height', vbH);
@@ -388,53 +401,4 @@ function showToast(msg, isError) {
   showToast._timer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-async function copyShareToClipboard() {
-  const btn = document.getElementById('share-btn');
-  if (btn) btn.disabled = true;
-  let png;
-  try {
-    png = await buildSharePng();
-  } catch (e) {
-    console.warn('build share png failed:', e);
-    showToast("Couldn't build image", true);
-    trackWithContext('share_failed', { reason: 'build' });
-    if (btn) btn.disabled = false;
-    return;
-  }
-  try {
-    if (!navigator.clipboard || !window.ClipboardItem) throw new Error('clipboard API unavailable');
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'image/png': png }),
-    ]);
-    showToast('Copied image to clipboard');
-    trackWithContext('share_copied', { method: 'clipboard' });
-  } catch (clipboardErr) {
-    console.warn('clipboard failed, falling back:', clipboardErr);
-    try {
-      const url = URL.createObjectURL(png);
-      const w = window.open(url, '_blank');
-      if (!w) {
-        showToast('Popup blocked — allow popups to share', true);
-        trackWithContext('share_failed', { reason: 'popup_blocked' });
-      } else {
-        showToast('Opened image in new tab');
-        setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
-        trackWithContext('share_copied', { method: 'new_tab' });
-      }
-    } catch (openErr) {
-      showToast("Couldn't share — try again", true);
-      trackWithContext('share_failed', { reason: 'open' });
-    }
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-(function wireShareButton() {
-  const btn = document.getElementById('share-btn');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    trackWithContext('share_click');
-    copyShareToClipboard();
-  });
-})();
+// Share-btn click is wired in js/share/gif.js, which opens the share modal.
