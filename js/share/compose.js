@@ -44,9 +44,29 @@ function ensureComposeCanvas() {
   return { canvas: _composeCanvas, ctx: _composeCtx };
 }
 
-async function rasterizeSvgToCanvas(svgStr, maxW, maxH) {
+// Blob-URL SVGs that contain nested <image href="data:..."> (drop-to-load
+// custom shapes) taint the canvas in Chrome/Safari because the inner data
+// URL is treated as cross-origin relative to the blob origin. Switch to a
+// data-URL outer SVG in that case: both outer + inner are data URLs with
+// null origin, and the canvas stays origin-clean so getImageData works.
+function _composeNeedsDataUrl() {
+  return typeof state !== 'undefined' && !!state.shapeImage;
+}
+
+function _svgStringToUrl(svgStr) {
+  if (_composeNeedsDataUrl()) {
+    return {
+      url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr),
+      revoke: null,
+    };
+  }
   const blob = new Blob([svgStr], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
+  return { url, revoke: () => URL.revokeObjectURL(url) };
+}
+
+async function rasterizeSvgToCanvas(svgStr, maxW, maxH) {
+  const { url, revoke } = _svgStringToUrl(svgStr);
   try {
     const img = new Image();
     img.decoding = 'async';
@@ -66,7 +86,7 @@ async function rasterizeSvgToCanvas(svgStr, maxW, maxH) {
     _boardCtx.drawImage(img, 0, 0, w, h);
     return { canvas: _boardCanvas, w, h };
   } finally {
-    URL.revokeObjectURL(url);
+    if (revoke) revoke();
   }
 }
 
