@@ -557,6 +557,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/core/page-meta.js"></script>
 <script src="${rel}js/core/modes.js"></script>
 <script src="${rel}js/core/router.js"></script>
+<script src="${rel}js/core/custom-shape.js"></script>
 <script src="${rel}js/core/signed-storage.js"></script>
 <script src="${rel}js/core/daily-lock.js"></script>
 <script src="${rel}js/core/mode-stats.js"></script>
@@ -567,6 +568,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="${rel}js/geometry/inscribed-square.js"></script>
 <script src="${rel}js/geometry/shape-utils.js"></script>
 <script src="${rel}js/geometry/shape-edges.js"></script>
+<script src="${rel}js/geometry/edge-samplers.js"></script>
 <script src="${rel}js/geometry/shape-outer.js"></script>
 <script src="${rel}js/geometry/shape-holes.js"></script>
 <script src="${rel}js/geometry/shapes.js"></script>

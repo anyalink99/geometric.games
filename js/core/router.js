@@ -1,4 +1,9 @@
 const HASH_RE = /^(drop-)?[a-z0-9]{6,64}$/i;
+// Custom hand-authored shapes (tools/shape-editor.html). Payload is a base64url
+// blob of quantized vertex coordinates — no shared alphabet with HASH_RE, so
+// the two patterns are checked independently. Upper bound (4000) covers a
+// 200-point outer + six 200-point holes with headroom.
+const CUSTOM_HASH_RE = /^c-[A-Za-z0-9_-]{4,4000}$/;
 
 function parseLocation() {
   const parts = window.location.pathname.split('/').filter(Boolean);
@@ -17,7 +22,7 @@ function parseLocation() {
   let hash = null;
   if (!daily) {
     const s = sp.get('s');
-    if (s && HASH_RE.test(s)) hash = s;
+    if (s && (HASH_RE.test(s) || CUSTOM_HASH_RE.test(s))) hash = s;
   }
 
   return { mode, variation, hash, daily };

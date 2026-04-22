@@ -113,8 +113,21 @@ function newShape(hash, nav = 'push') {
       ? dailyHashFor(state.mode, currentVariation())
       : generateHash();
   }
+  // Custom shapes from the editor travel as c-<base64url> tokens. The payload
+  // itself carries the geometry, so we skip the random generator entirely. If
+  // decoding fails (tampered URL, wrong version), fall back to a fresh random
+  // shape so the page still loads.
+  let customShape = null;
+  if (isCustomShapeHash(h)) {
+    customShape = decodeCustomShape(h);
+    if (!customShape) {
+      h = generateHash();
+    }
+  }
   state.hash = h;
-  state.shape = cachedShape || withSeed(seedFromString(h), generateShapeForMode);
+  state.shape = customShape
+    || cachedShape
+    || withSeed(seedFromString(h), generateShapeForMode);
   state.locked = false;
   resetAllModes();
   renderShape(state.shape);
