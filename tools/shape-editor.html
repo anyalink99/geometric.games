@@ -229,9 +229,27 @@
     fill: none; stroke: var(--accent); stroke-width: 2;
     pointer-events: none;
   }
-  .centroid-mark {
-    fill: #ffd166; stroke: #111; stroke-width: 1;
-    pointer-events: none;
+  /* Centroid doubles as a transform handle for the whole shape:
+     drag it → translate, click it → show rotate + scale gizmos. */
+  .centroid-handle {
+    fill: #ffd166; stroke: #111; stroke-width: 1.5;
+    cursor: grab;
+    pointer-events: auto;
+  }
+  .centroid-handle.selected {
+    stroke: #fff; stroke-width: 2;
+    filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.85));
+  }
+  .transform-handle {
+    stroke: #1a161d; stroke-width: 1.5;
+    cursor: grab;
+    pointer-events: auto;
+  }
+  .transform-handle.rotate { fill: #5ec9ff; }
+  .transform-handle.scale  { fill: #ff9f6e; }
+  .transform-line {
+    stroke: #ffd166; stroke-width: 1; stroke-dasharray: 3 3;
+    opacity: 0.55; pointer-events: none;
   }
 
   .anchor-handle {
@@ -572,10 +590,9 @@
 
   function renderShape() {
     shapeLayer.innerHTML = '';
-    centroidLayer.innerHTML = '';
-    if (!state.outerClosed) return;
+    if (!state.outerClosed) { centroidLayer.innerHTML = ''; return; }
     const s = currentShape();
-    if (!s) return;
+    if (!s) { centroidLayer.innerHTML = ''; return; }
 
     let d = pathRing(s.outer, true);
     for (const h of s.holes) d += ' ' + pathRing(h, true);
@@ -590,12 +607,75 @@
     outline.setAttribute('d', d);
     shapeLayer.appendChild(outline);
 
+    renderCentroidAndTransform(s);
+  }
+
+  // Centroid handle + (when selected) rotate/scale gizmos. All live in
+  // centroidLayer so they float above shape/handle layers and can be clicked
+  // without getting blocked by other handles. Callable standalone from the
+  // select path so the gizmos appear/disappear on click-to-select without a
+  // full re-render of handleLayer.
+  function renderCentroidAndTransform(shapeArg) {
+    centroidLayer.innerHTML = '';
+    if (!state.outerClosed) return;
+    const s = shapeArg || currentShape();
+    if (!s) return;
     const c = shapeCentroid(s);
+    const selected = state.selected && state.selected.kind === 'centroid';
+
     const mark = document.createElementNS(SVGN, 'circle');
     mark.setAttribute('cx', c.x); mark.setAttribute('cy', c.y);
-    mark.setAttribute('r', 4);
-    mark.setAttribute('class', 'centroid-mark');
+    mark.setAttribute('r', selected ? 6 : 5);
+    mark.setAttribute('class', 'centroid-handle' + (selected ? ' selected' : ''));
+    mark.dataset.role = 'centroid';
     centroidLayer.appendChild(mark);
+
+    if (!selected) return;
+
+    // Default handle positions: just above and to the right of the shape's
+    // bounding sphere around the centroid. During an active rotate/scale
+    // drag, the active handle follows the cursor so it stays under the
+    // user's finger instead of snapping back to its resting axis.
+    let maxR = 0;
+    for (const p of s.outer) {
+      const dd = Math.hypot(p.x - c.x, p.y - c.y);
+      if (dd > maxR) maxR = dd;
+    }
+    const offset = Math.max(50, maxR + 28);
+    let rot = { x: c.x, y: Math.max(14, c.y - offset) };
+    let scl = { x: Math.min(386, c.x + offset), y: c.y };
+    const drag = state.drag;
+    if (drag && state.hoverPoint) {
+      if (drag.kind === 'centroid-rotate') rot = state.hoverPoint;
+      else if (drag.kind === 'centroid-scale') scl = state.hoverPoint;
+    }
+
+    const line1 = document.createElementNS(SVGN, 'line');
+    line1.setAttribute('x1', c.x); line1.setAttribute('y1', c.y);
+    line1.setAttribute('x2', rot.x); line1.setAttribute('y2', rot.y);
+    line1.setAttribute('class', 'transform-line');
+    centroidLayer.appendChild(line1);
+
+    const line2 = document.createElementNS(SVGN, 'line');
+    line2.setAttribute('x1', c.x); line2.setAttribute('y1', c.y);
+    line2.setAttribute('x2', scl.x); line2.setAttribute('y2', scl.y);
+    line2.setAttribute('class', 'transform-line');
+    centroidLayer.appendChild(line2);
+
+    const rotH = document.createElementNS(SVGN, 'circle');
+    rotH.setAttribute('cx', rot.x); rotH.setAttribute('cy', rot.y);
+    rotH.setAttribute('r', 6);
+    rotH.setAttribute('class', 'transform-handle rotate');
+    rotH.dataset.role = 'centroid-rotate';
+    centroidLayer.appendChild(rotH);
+
+    const sclH = document.createElementNS(SVGN, 'rect');
+    const sz = 11;
+    sclH.setAttribute('x', scl.x - sz / 2); sclH.setAttribute('y', scl.y - sz / 2);
+    sclH.setAttribute('width', sz); sclH.setAttribute('height', sz);
+    sclH.setAttribute('class', 'transform-handle scale');
+    sclH.dataset.role = 'centroid-scale';
+    centroidLayer.appendChild(sclH);
   }
 
   function renderDraft() {
@@ -807,6 +887,19 @@
     if (sel.kind === 'anchor') renderAnchorInspector(sel.idx);
     else if (sel.kind === 'edge') renderEdgeInspector(sel.idx);
     else if (sel.kind === 'hole') renderHoleInspector(sel.idx);
+    else if (sel.kind === 'centroid') renderCentroidInspector();
+  }
+
+  function renderCentroidInspector() {
+    inspectorTitle.textContent = 'Transform whole shape';
+    inspectorBody.innerHTML = '';
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size: 12px; color: var(--text-dim); line-height: 1.5;';
+    hint.innerHTML =
+      'Drag the yellow centroid · move the shape<br>' +
+      'Drag the blue circle · rotate around centroid<br>' +
+      'Drag the orange square · scale from centroid';
+    inspectorBody.appendChild(hint);
   }
 
   function renderAnchorInspector(idx) {
@@ -1145,6 +1238,38 @@
       selectAndRefreshInspector();
       return;
     }
+    if (role === 'centroid' || role === 'centroid-rotate' || role === 'centroid-scale') {
+      const s = currentShape();
+      if (!s) return;
+      const c = shapeCentroid(s);
+      const od = {
+        centroid: c,
+        anchors: state.anchors.map(a => ({
+          x: a.x, y: a.y,
+          h1x: a.h1x || 0, h1y: a.h1y || 0,
+          h2x: a.h2x || 0, h2y: a.h2y || 0,
+        })),
+        holes: state.holes.map(h => {
+          if (h.type === 'polygon') return { type: 'polygon', pts: h.pts.map(pt => ({ x: pt.x, y: pt.y })) };
+          return Object.assign({}, h);
+        }),
+      };
+      if (role === 'centroid-rotate') od.originAngle = Math.atan2(p.y - c.y, p.x - c.x);
+      if (role === 'centroid-scale') od.originDist = Math.max(1, Math.hypot(p.x - c.x, p.y - c.y));
+      state.selected = { kind: 'centroid' };
+      const dragKind =
+        role === 'centroid-rotate' ? 'centroid-rotate' :
+        role === 'centroid-scale'  ? 'centroid-scale' :
+        'centroid-move';
+      state.drag = {
+        kind: dragKind,
+        pointerId: e.pointerId, moved: false,
+        origin: { x: p.x, y: p.y },
+        originData: od,
+      };
+      selectAndRefreshInspector();
+      return;
+    }
     if (role === 'hole-center' || role === 'hole-rim' || role === 'hole-lens-end' || role === 'hole-lens-bulge') {
       const hi = Number(t.dataset.hole);
       const h = state.holes[hi];
@@ -1348,6 +1473,74 @@
       const offset = dx * perpX + dy * perpY;
       const paramDelta = offset / 80;
       edge.param = Math.max(0, Math.min(1, od.param + paramDelta));
+    } else if (d.kind === 'centroid-move') {
+      _applyTransformFromOrigin(od, (x, y) => ({ x: x + dx, y: y + dy }), 1, 0);
+    } else if (d.kind === 'centroid-rotate') {
+      const c = od.centroid;
+      const curAngle = Math.atan2(p.y - c.y, p.x - c.x);
+      const theta = curAngle - od.originAngle;
+      const ca = Math.cos(theta), sa = Math.sin(theta);
+      _applyTransformFromOrigin(od, (x, y) => ({
+        x: c.x + (x - c.x) * ca - (y - c.y) * sa,
+        y: c.y + (x - c.x) * sa + (y - c.y) * ca,
+      }), 1, theta);
+    } else if (d.kind === 'centroid-scale') {
+      const c = od.centroid;
+      const curDist = Math.hypot(p.x - c.x, p.y - c.y);
+      const f = Math.max(0.1, curDist / od.originDist);
+      _applyTransformFromOrigin(od, (x, y) => ({
+        x: c.x + (x - c.x) * f,
+        y: c.y + (y - c.y) * f,
+      }), f, 0);
+    }
+  }
+
+  // Re-applies a scalar/rotational transform to anchors + holes from the
+  // pre-drag snapshot in `od` (captured at pointerdown). Computes positions
+  // fresh from the snapshot every pointermove, so repeated rotations/scales
+  // don't drift from numerical error. `vScale` scales tangent offsets (and
+  // radii / lens len + bulge); `dTheta` rotates tangent offsets and lens
+  // axes. For pure translate: vScale = 1, dTheta = 0.
+  function _applyTransformFromOrigin(od, mapPoint, vScale, dTheta) {
+    const cosT = Math.cos(dTheta), sinT = Math.sin(dTheta);
+    const rotVec = (x, y) => ({ x: x * cosT - y * sinT, y: x * sinT + y * cosT });
+    for (let i = 0; i < state.anchors.length; i++) {
+      const src = od.anchors[i];
+      if (!src) continue;
+      const np = mapPoint(src.x, src.y);
+      const dst = state.anchors[i];
+      dst.x = snapPos(np.x);
+      dst.y = snapPos(np.y);
+      const t1 = rotVec(src.h1x, src.h1y);
+      const t2 = rotVec(src.h2x, src.h2y);
+      dst.h1x = snapTan(t1.x * vScale);
+      dst.h1y = snapTan(t1.y * vScale);
+      dst.h2x = snapTan(t2.x * vScale);
+      dst.h2y = snapTan(t2.y * vScale);
+    }
+    for (let i = 0; i < state.holes.length; i++) {
+      const src = od.holes[i];
+      const dst = state.holes[i];
+      if (!src || !dst || src.type !== dst.type) continue;
+      if (dst.type === 'polygon') {
+        for (let j = 0; j < dst.pts.length; j++) {
+          const sp = src.pts[j];
+          if (!sp) continue;
+          const np = mapPoint(sp.x, sp.y);
+          dst.pts[j].x = snapPos(np.x);
+          dst.pts[j].y = snapPos(np.y);
+        }
+      } else if (dst.type === 'circle') {
+        const np = mapPoint(src.cx, src.cy);
+        dst.cx = snapPos(np.x); dst.cy = snapPos(np.y);
+        dst.r = snapPos(Math.max(3, src.r * vScale));
+      } else if (dst.type === 'lens') {
+        const np = mapPoint(src.cx, src.cy);
+        dst.cx = snapPos(np.x); dst.cy = snapPos(np.y);
+        dst.len = snapPos(Math.max(4, src.len * vScale));
+        dst.bulge = snapPos(Math.max(1, src.bulge * vScale));
+        dst.angle = src.angle + dTheta;
+      }
     }
   }
 
@@ -1443,6 +1636,9 @@
     handleLayer.querySelectorAll('[data-anchor]').forEach(el => {
       el.classList.toggle('visible', Number(el.dataset.anchor) === selAnchorIdx);
     });
+    // Centroid sits in its own layer and shows/hides the rotate+scale gizmos
+    // based on selection, so refresh it here instead of a full render.
+    renderCentroidAndTransform();
     renderInspector();
     updateHintByContext();
   }
